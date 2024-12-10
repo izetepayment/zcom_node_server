@@ -1,0 +1,79 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "mysql"
+  url      = "mysql://zcomDb:zcomDbzcomDb@zcomdb.cdcsy08m8pd1.us-east-2.rds.amazonaws.com:3306/zcomDb"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model zcom_admin {
+  id        Int      @id @default(autoincrement())
+  aId       String
+  name      String
+  phone     String
+  email     String
+  address   String
+  password  String
+  status    String   @default("created")
+  auth_key  String
+  createdOn DateTime @default(now())
+}
+
+model zcom_categories {
+  id        Int      @id @default(autoincrement())
+  category  String
+  image     String
+  createdOn DateTime @default(now())
+}
+
+model zcom_subcategories {
+  id          Int      @id @default(autoincrement())
+  categoryId  String
+  subCategory String
+  createdOn   DateTime @default(now())
+}
+
+model zcom_stock {
+  id            Int      @id @default(autoincrement())
+  vendorId      String
+  categoryId    String
+  subcategoryId String
+  sku           String
+  productName   String
+  image         String
+  price         String
+  strikePrice   String
+  qty           String
+  discount      String
+  coupon        String
+  shipPrice     String
+  stockUpdate   String
+  spec          String
+  description   String
+  createdOn     DateTime @default(now())
+}
+
+model zcom_user {
+  id        Int      @id @default(autoincrement())
+  name      String
+  cc        String
+  phone     String
+  email     String
+  password  String
+  wallet    Float    @default(0)
+  otp       String
+  status    String   @default("created")
+  auth_key  String
+  createdOn DateTime @default(now())
+}
+
+model zcom_banner {
+  id        Int      @id @default(autoincrement())
+  title     String
+  banner    String
+  createdOn DateTime @default(now())
+}
