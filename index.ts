@@ -841,7 +841,7 @@ app.use((req:any, res:any) => {
   });
 });
 
-app.listen(8001, () => console.log(`Server ready at: http://localhost:8001`)).on("error", err => {
+app.listen(8080, () => console.log(`Server ready at: http://localhost:8001`)).on("error", err => {
   console.log(err)
 })
 
