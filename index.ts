@@ -7,7 +7,7 @@ import fs from 'fs'
 import moment from 'moment-timezone'
 
 var path = require('path');
-const prisma :any= new PrismaClient()
+const prisma: any = new PrismaClient()
 const app = express()
 app.use(express.json())
 app.use(cors())
@@ -35,13 +35,13 @@ app.get("/health_check", (_, res) => {
 });
 
 app.get('/test', (req, res) => {
-    res.status(200).json({ message: 'Test API is working!' });
+  res.status(200).json({ message: 'Test API is working!' });
 });
 
 const SAdminJwt = "Bearer 5e4aba774effe088d9cd99c434c0f240"
 
 app.post('/zcom/admin_register', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header("jwt")
   var name = req.body.name
   var phone = req.body.phone
@@ -81,7 +81,7 @@ app.post('/zcom/admin_register', async (req, res) => {
 })
 
 app.put('/zcom/admin', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header("jwt")
   var aId = req.body.aId
   var name = req.body.name
@@ -110,7 +110,7 @@ app.put('/zcom/admin', async (req, res) => {
 })
 
 app.post('/zcom/login', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header("jwt");
   var phone = req.body.mobile
   var password = req.body.password
@@ -147,7 +147,7 @@ app.post('/zcom/login', async (req, res) => {
 })
 
 app.get('/zcom/admin', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header("jwt");
   var id = req.query.id
   var phone = req.query.phone
@@ -168,7 +168,7 @@ app.get('/zcom/admin', async (req, res) => {
 })
 
 app.delete('/zcom/admin', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
   console.log(jwt)
@@ -192,7 +192,7 @@ app.delete('/zcom/admin', async (req, res) => {
 })
 
 app.post('/zcom/user_register', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var name = req.body.name
   var cc = req.body.cc
   var phone = req.body.phone
@@ -230,7 +230,7 @@ app.post('/zcom/user_register', async (req, res) => {
 })
 
 app.post('/zcom/user_verify_otp', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var phone = req.body.phone
   var otp = req.body.otp
   console.log(req.body)
@@ -260,7 +260,7 @@ app.post('/zcom/user_verify_otp', async (req, res) => {
 })
 
 // app.post('/zcom/user_login', async (req, res) => {
-  // await executeLatinFunction()
+// await executeLatinFunction()
 //   var phone = req.body.phone
 //   var password = req.body.password
 //   console.log(req.body)
@@ -279,7 +279,7 @@ app.post('/zcom/user_verify_otp', async (req, res) => {
 // })
 
 app.post('/zcom/user_login', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var phone = req.body.phone
   var password = req.body.password
   console.log(req.body)
@@ -312,7 +312,7 @@ app.post('/zcom/user_login', async (req, res) => {
 })
 
 app.get('/zcom/user', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var id = req.query.id
   var phone = req.query.phone
   console.log(req.query)
@@ -328,7 +328,7 @@ app.get('/zcom/user', async (req, res) => {
 })
 
 app.delete('/zcom/user', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var id = req.query.id
   if (id) {
     const result = await prisma.zcom_user.delete({
@@ -345,7 +345,7 @@ app.delete('/zcom/user', async (req, res) => {
 })
 
 app.post('/zcom/categories', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var category = req.body.category
   var image = req.body.image
@@ -369,7 +369,7 @@ app.post('/zcom/categories', async (req, res) => {
 })
 
 app.put('/zcom/categories', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var category = req.body.category
   var image = req.body.image
@@ -395,7 +395,7 @@ app.put('/zcom/categories', async (req, res) => {
 })
 
 app.get('/zcom/categories', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
   if (jwt == SAdminJwt) {
@@ -410,7 +410,7 @@ app.get('/zcom/categories', async (req, res) => {
 })
 
 app.delete('/zcom/categories', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
   if (jwt == SAdminJwt) {
@@ -432,7 +432,7 @@ app.delete('/zcom/categories', async (req, res) => {
 })
 
 app.post('/zcom/subcategories', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var categoryId = req.body.categoryId
   var subCategory = req.body.subCategory
@@ -456,7 +456,7 @@ app.post('/zcom/subcategories', async (req, res) => {
 })
 
 app.put('/zcom/subcategories', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var categoryId = req.body.categoryId
   var subCategory = req.body.subCategory
@@ -482,7 +482,7 @@ app.put('/zcom/subcategories', async (req, res) => {
 })
 
 app.get('/zcom/subcategories', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
   console.log(jwt)
@@ -499,7 +499,7 @@ app.get('/zcom/subcategories', async (req, res) => {
 })
 
 app.delete('/zcom/subcategories', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
   if (jwt == SAdminJwt) {
@@ -521,7 +521,7 @@ app.delete('/zcom/subcategories', async (req, res) => {
 })
 
 app.post('/zcom/stock', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var vendorId = req.body.vendorId
   var categoryId = req.body.categoryId
   var subcategoryId = req.body.subcategoryId
@@ -563,7 +563,7 @@ app.post('/zcom/stock', async (req, res) => {
 })
 
 app.put('/zcom/stock', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var vendorId = req.body.vendorId
   var categoryId = req.body.categoryId
   var subcategoryId = req.body.subcategoryId
@@ -606,17 +606,17 @@ app.put('/zcom/stock', async (req, res) => {
 })
 
 app.get('/zcom/stock', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var vendorDet = new Map();
   var categoryDet = new Map();
   var subcatDet = new Map();
-  (await prisma.zcom_admin.findMany()).forEach((element:any) => {
+  (await prisma.zcom_admin.findMany()).forEach((element: any) => {
     vendorDet.set(element.id + "", element.name)
   });
-  (await prisma.zcom_categories.findMany()).forEach((element:any) => {
+  (await prisma.zcom_categories.findMany()).forEach((element: any) => {
     categoryDet.set(element.id + "", element.category)
   });
-  (await prisma.zcom_subcategories.findMany()).forEach((element:any) => {
+  (await prisma.zcom_subcategories.findMany()).forEach((element: any) => {
     subcatDet.set(element.id + "", element.subCategory)
   });
   var jwt = req.header('jwt')
@@ -625,7 +625,7 @@ app.get('/zcom/stock', async (req, res) => {
     const result = (await prisma.zcom_stock.findMany({
       where: id ? { id: Number(id) } : {},
       orderBy: { id: "desc" }
-    })).map(function (val:any, index:any) {
+    })).map(function (val: any, index: any) {
       return {
         "id": val.id,
         "vendor": vendorDet.has(val.vendorId) ? vendorDet.get(val.vendorId) : "NA",
@@ -644,7 +644,7 @@ app.get('/zcom/stock', async (req, res) => {
 })
 
 app.delete('/zcom/stock', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
   if (jwt == SAdminJwt) {
@@ -666,7 +666,7 @@ app.delete('/zcom/stock', async (req, res) => {
 })
 
 app.post('/zcom/banner', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var title = req.body.title
   var banner = req.body.banner
   console.log(req.body)
@@ -685,7 +685,7 @@ app.post('/zcom/banner', async (req, res) => {
 })
 
 app.put('/zcom/banner', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var title = req.body.title
   var banner = req.body.banner
   var id = req.body.id
@@ -706,7 +706,7 @@ app.put('/zcom/banner', async (req, res) => {
 })
 
 app.get('/zcom/banner', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var id = req.query.id
   const result = await prisma.zcom_banner.findMany({
     where: id ? { id: Number(id) } : {},
@@ -716,7 +716,7 @@ app.get('/zcom/banner', async (req, res) => {
 })
 
 app.delete('/zcom/banner', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var id = req.query.id
   if (id) {
     const result = await prisma.zcom_banner.delete({
@@ -733,8 +733,8 @@ app.delete('/zcom/banner', async (req, res) => {
 })
 
 app.post('/zcom/fileUpload', async (req, res) => {
-  // await executeLatinFunction()
-  upload(req, res, (err:any) => {
+  await executeLatinFunction()
+  upload(req, res, (err: any) => {
     if (err) {
       res.json({ "error": true, "message": err.message });
     } else {
@@ -744,7 +744,7 @@ app.post('/zcom/fileUpload', async (req, res) => {
 })
 
 app.get('/zcom/get_Images', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   fs.readdir("./images", function (err, files) {
     if (err) {
       res.json();
@@ -758,7 +758,7 @@ app.get('/zcom/get_Images', async (req, res) => {
 })
 
 app.delete('/zcom/fileDelete', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var name = req.query.name
   if (name) {
     fs.unlink('./images/' + name, (err) => {
@@ -772,7 +772,7 @@ app.delete('/zcom/fileDelete', async (req, res) => {
   }
 })
 
-async function pushNotification(title :any, message:any, key:any) {
+async function pushNotification(title: any, message: any, key: any) {
   const data = JSON.stringify({
     "to": '/topics/allDevices',
     "priority": "high",
@@ -806,14 +806,14 @@ async function pushNotification(title :any, message:any, key:any) {
 
 const upload = multer({
   storage: multer.diskStorage({
-    destination: function (req:any, file:any, cb:any) {
+    destination: function (req: any, file: any, cb: any) {
       cb(null, "./images");
     },
-    filename: function (req:any, file:any, cb:any) {
+    filename: function (req: any, file: any, cb: any) {
       cb(null, file.originalname);
     }
   }),
-  fileFilter: function (req:any, file:any, callback:any) {
+  fileFilter: function (req: any, file: any, callback: any) {
     var ext = path.extname(file.originalname);
     if (ext !== '.png' && ext !== '.jpg' && ext !== '.gif' && ext !== '.jpeg') {
       return callback(new Error('Only images are allowed'))
@@ -834,7 +834,7 @@ app.get('/zcom/images/*', async (req, res) => {
   res.sendFile("/home/arthy" + req.path.replace("small/", "").replace(replacer, " "));
 })
 
-app.use((req:any, res:any) => {
+app.use((req: any, res: any) => {
   return res.status(404).json({
     status: false,
     message: `${req.method} at ${req.path} not found`,
@@ -845,14 +845,14 @@ app.listen(8080, () => console.log(`Server ready at: http://localhost:8080`)).on
   console.log(err)
 })
 
-// async function executeLatinFunction() {
-//   await prisma.$executeRaw(Prisma.sql`SET NAMES latin1`);
-//   await prisma.$executeRaw(Prisma.sql`SET CHARACTER SET latin1`);
-//   await prisma.$executeRaw(Prisma.sql`SET character_set_connection=latin1`);
-// }
+async function executeLatinFunction() {
+  await prisma.$executeRaw(Prisma.sql`SET NAMES latin1`);
+  await prisma.$executeRaw(Prisma.sql`SET CHARACTER SET latin1`);
+  await prisma.$executeRaw(Prisma.sql`SET character_set_connection=latin1`);
+}
 
-// async function executeUtfFunction() {
-//   await prisma.$executeRaw(Prisma.sql`SET NAMES utf8`);
-//   await prisma.$executeRaw(Prisma.sql`SET CHARACTER SET utf8`);
-//   await prisma.$executeRaw(Prisma.sql`SET character_set_connection=utf8`);
-// }
+async function executeUtfFunction() {
+  await prisma.$executeRaw(Prisma.sql`SET NAMES utf8`);
+  await prisma.$executeRaw(Prisma.sql`SET CHARACTER SET utf8`);
+  await prisma.$executeRaw(Prisma.sql`SET character_set_connection=utf8`);
+}
