@@ -7,7 +7,7 @@ import fs from 'fs'
 import moment from 'moment-timezone'
 
 var path = require('path');
-const prisma: any = new PrismaClient()
+const prisma = new PrismaClient()
 const app = express()
 app.use(express.json())
 app.use(cors())
@@ -191,43 +191,43 @@ app.delete('/zcom/admin', async (req, res) => {
   }
 })
 
-app.post('/zcom/user_register', async (req, res) => {
-  await executeLatinFunction()
-  var name = req.body.name
-  var cc = req.body.cc
-  var phone = req.body.phone
-  var email = req.body.email
-  var password = req.body.password
-  var otp = Math.floor(1000 + Math.random() * 9000);
-  console.log(req.body)
-  if (name && cc && phone && email && password) {
-    const resultUser = await prisma.zcom_user.findFirst({
-      where: { phone: phone }
-    });
-    if (!resultUser) {
-      const authkey = require('crypto').randomBytes(16).toString('hex')
-      const result = await prisma.zcom_user.create({
-        data: { name: name, cc: cc, phone: phone, email: email, password: password, otp: otp + "", auth_key: authkey }
-      });
-      if (result) {
-        res.json({ "message": "OTP: " + result.otp, "success": true })
-      } else {
-        res.json({ "message": "Oops! An error occurred.", "success": false })
-      }
-    } else {
-      const oldUser = await prisma.zcom_user.findFirst({
-        where: { phone: phone }
-      });
-      if (oldUser.status == "created") {
-        res.json({ "message": "OTP: " + oldUser.otp, "success": true })
-      } else {
-        res.json({ "message": "Phone number is already in use. current user", "success": false })
-      }
-    }
-  } else {
-    res.json({ "message": "Required fields missing", "success": false });
-  }
-})
+// app.post('/zcom/user_register', async (req, res) => {
+//   await executeLatinFunction()
+//   var name = req.body.name
+//   var cc = req.body.cc
+//   var phone = req.body.phone
+//   var email = req.body.email
+//   var password = req.body.password
+//   var otp = Math.floor(1000 + Math.random() * 9000);
+//   console.log(req.body)
+//   if (name && cc && phone && email && password) {
+//     const resultUser = await prisma.zcom_user.findFirst({
+//       where: { phone: phone }
+//     });
+//     if (!resultUser) {
+//       const authkey = require('crypto').randomBytes(16).toString('hex')
+//       const result = await prisma.zcom_user.create({
+//         data: { name: name, cc: cc, phone: phone, email: email, password: password, otp: otp + "", auth_key: authkey }
+//       });
+//       if (result) {
+//         res.json({ "message": "OTP: " + result.otp, "success": true })
+//       } else {
+//         res.json({ "message": "Oops! An error occurred.", "success": false })
+//       }
+//     } else {
+//       const oldUser = await prisma.zcom_user.findFirst({
+//         where: { phone: phone }
+//       });
+//       if (oldUser.status == "created") {
+//         res.json({ "message": "OTP: " + oldUser.otp, "success": true })
+//       } else {
+//         res.json({ "message": "Phone number is already in use. current user", "success": false })
+//       }
+//     }
+//   } else {
+//     res.json({ "message": "Required fields missing", "success": false });
+//   }
+// })
 
 app.post('/zcom/user_verify_otp', async (req, res) => {
   await executeLatinFunction()
@@ -610,13 +610,13 @@ app.get('/zcom/stock', async (req, res) => {
   var vendorDet = new Map();
   var categoryDet = new Map();
   var subcatDet = new Map();
-  (await prisma.zcom_admin.findMany()).forEach((element: any) => {
+  (await prisma.zcom_admin.findMany()).forEach((element) => {
     vendorDet.set(element.id + "", element.name)
   });
-  (await prisma.zcom_categories.findMany()).forEach((element: any) => {
+  (await prisma.zcom_categories.findMany()).forEach((element) => {
     categoryDet.set(element.id + "", element.category)
   });
-  (await prisma.zcom_subcategories.findMany()).forEach((element: any) => {
+  (await prisma.zcom_subcategories.findMany()).forEach((element) => {
     subcatDet.set(element.id + "", element.subCategory)
   });
   var jwt = req.header('jwt')
@@ -625,7 +625,7 @@ app.get('/zcom/stock', async (req, res) => {
     const result = (await prisma.zcom_stock.findMany({
       where: id ? { id: Number(id) } : {},
       orderBy: { id: "desc" }
-    })).map(function (val: any, index: any) {
+    })).map(function (val, index) {
       return {
         "id": val.id,
         "vendor": vendorDet.has(val.vendorId) ? vendorDet.get(val.vendorId) : "NA",
@@ -734,7 +734,7 @@ app.delete('/zcom/banner', async (req, res) => {
 
 app.post('/zcom/fileUpload', async (req, res) => {
   await executeLatinFunction()
-  upload(req, res, (err: any) => {
+  upload(req, res, (err) => {
     if (err) {
       res.json({ "error": true, "message": err.message });
     } else {
@@ -806,14 +806,14 @@ async function pushNotification(title: any, message: any, key: any) {
 
 const upload = multer({
   storage: multer.diskStorage({
-    destination: function (req: any, file: any, cb: any) {
+    destination: function (req, file, cb) {
       cb(null, "./images");
     },
-    filename: function (req: any, file: any, cb: any) {
+    filename: function (req, file, cb) {
       cb(null, file.originalname);
     }
   }),
-  fileFilter: function (req: any, file: any, callback: any) {
+  fileFilter: function (req, file, callback) {
     var ext = path.extname(file.originalname);
     if (ext !== '.png' && ext !== '.jpg' && ext !== '.gif' && ext !== '.jpeg') {
       return callback(new Error('Only images are allowed'))
