@@ -4,6 +4,7 @@
 datasource db {
   provider = "mysql"
   url      = "mysql://zcomDb:zcomDbzcomDb@zcomdb.cdcsy08m8pd1.us-east-2.rds.amazonaws.com:3306/zcomDb"
+  // url      = "mysql://root:@localhost:3306/zcom"
 }
 
 generator client {
