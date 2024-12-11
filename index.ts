@@ -1374,9 +1374,9 @@ app.post('/zcom/fileUpload', async (req, res) => {
   await executeLatinFunction()
   upload(req, res, (err) => {
     if (err) {
-      res.json({ "error": true, "message": err.message });
+      res.json({ "error": false, "message": err.message });
     } else {
-      res.json({ "error": false, "message": "Image uploaded successfully" });
+      res.json({ "error": true, "message": "Image uploaded successfully" });
     }
   });
 })
@@ -1468,7 +1468,7 @@ app.use(express.static(__dirname + '/zcom/images'));
 app.get('/zcom/images/*', async (req, res) => {
   const search = "%20";
   const replacer = new RegExp(search, "g");
-  // res.sendFile('C:/Users/Hp/Desktop/Network_api/zcom_api/' + req.path.replace("small/", "").replace("prisma/zcom/", "").replace(replacer, " "))
+  // res.sendFile('C:/Users/intel/Desktop/zcom_node_server/' + req.path.replace("small/", "").replace("/zcom/", "").replace(replacer, " "))
   res.sendFile("/home/arthy" + req.path.replace("small/", "").replace(replacer, " "));
 })
 
