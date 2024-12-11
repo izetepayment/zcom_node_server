@@ -55,7 +55,19 @@ model zcom_stock {
   stockUpdate   String
   spec          String
   description   String
+  rating        String   @default("4.5")
   createdOn     DateTime @default(now())
+}
+
+model zcom_cart {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  userName  String
+  phone     String
+  email     String
+  stockId   String
+  count     Int      @default(0)
+  createdOn DateTime @default(now())
 }
 
 model zcom_order {
@@ -130,6 +142,20 @@ model zcom_delivery_partner {
   joinDate       String
   status         String
   createdOn      DateTime @default(now())
+}
+
+model zcom_rating {
+  id         Int      @id @default(autoincrement())
+  userId     String
+  username   String
+  userImg    String
+  stockId    String
+  productImg String
+  title      String
+  review     String
+  rating     Float    @default(4.5)
+  useful     Int      @default(0)
+  createdOn  DateTime @default(now())
 }
 
 model zcom_user {

@@ -665,6 +665,116 @@ app.delete('/zcom/stock', async (req, res) => {
   }
 })
 
+app.post('/zcom/cart', async (req, res) => {
+  await executeLatinFunction()
+  var jwt = req.header('jwt')
+  var userId = req.body.userId
+  var userName = req.body.userName
+  var phone = req.body.phone
+  var email = req.body.email
+  var stockId = req.body.stockId
+  if (jwt == SAdminJwt) {
+    if (userId && userName && phone && email && stockId) {
+      const resultfind = await prisma.zcom_cart.findFirst({ where: { userId: userId } });
+      if (resultfind) {
+        const result = await prisma.zcom_cart.update({
+          where: { id: resultfind.id },
+          data: { userName: userName, phone: phone, email: email, stockId: stockId }
+        });
+        if (result) {
+          res.json({ "message": "Cart successfully updated.", "success": true })
+        } else {
+          res.json({ "message": "Oops! An error occurred.", "success": false })
+        }
+      } else {
+        const result = await prisma.zcom_cart.create({
+          data: { userId: userId, userName: userName, phone: phone, email: email, stockId: stockId }
+        });
+        if (result) {
+          res.json({ "message": "Cart successfully created.", "success": true })
+        } else {
+          res.json({ "message": "Oops! An error occurred.", "success": false })
+        }
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
+app.post('/zcom/cart_app', async (req, res) => {
+  await executeLatinFunction()
+  var jwt = req.header('jwt')
+  var userId = req.body.userId
+  var userName = req.body.userName
+  var phone = req.body.phone
+  var email = req.body.email
+  var stockId = req.body.stockId
+  var isAdd = req.body.isAdd
+  if (jwt == SAdminJwt) {
+    if (userId && userName && phone && email && stockId) {
+      const resultfind = await prisma.zcom_cart.findFirst({ where: { userId: userId } });
+      if (resultfind) {
+        var proDet = JSON.parse(resultfind.stockId)
+        if (isAdd == 'add') {
+          proDet.push(stockId)
+        } else if (isAdd == 'delete') {
+          proDet = proDet.filter((item: { id: any; }) => item.id !== stockId.id);
+        } else if (isAdd == 'replace' && proDet.length > 0) {
+          try {
+            const objectToReplace = proDet.find((arrayItem: { id: any; }) => arrayItem.id === stockId.id);
+            Object.assign(objectToReplace, stockId);
+          } catch (e) {
+            console.log(e)
+          }
+        }
+        const result = await prisma.zcom_cart.updateMany({
+          where: { userId: userId },
+          data: { userId: userId, userName: userName, phone: phone, email: email, stockId: JSON.stringify(proDet) }
+        });
+        if (result) {
+          res.json({ "message": "Cart successfully updated.", "success": true })
+        } else {
+          res.json({ "message": "Oops! An error occurred.", "success": false })
+        }
+      } else {
+        const result = await prisma.zcom_cart.create({
+          data: { userId: userId, userName: userName, phone: phone, email: email, stockId: "[" + JSON.stringify(stockId) + "]" }
+        });
+        if (result) {
+          res.json({ "message": "Cart successfully created.", "success": true })
+        } else {
+          res.json({ "message": "Oops! An error occurred.", "success": false })
+        }
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
+app.get("/zcom/cart", async (req, res) => {
+  await executeLatinFunction();
+  var jwt = req.header('jwt')
+  if (jwt == SAdminJwt) {
+    var userId = req.query.userId
+    const result = await prisma.zcom_cart.findFirst({
+      where: { userId: userId + "" }
+    });
+    if (result) {
+      res.json({ "data": result, "message": "successfully Fetched.", "success": true });
+    } else {
+      res.json({ "message": "cart empty", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+});
+
 app.post('/zcom/order', async (req, res) => {
   await executeLatinFunction()
   var userId = req.body.userId
@@ -1081,6 +1191,109 @@ app.delete('/zcom/dPartner', async (req, res) => {
         res.json({ "message": "Deliver Partner successfully Removed.", "success": true });
       } else {
         res.json({ "message": "No Deliver Partner found.", "success": false });
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
+app.post('/zcom/rating', async (req, res) => {
+  await executeLatinFunction()
+  var userId = req.body.userId
+  var username = req.body.username
+  var userImg = req.body.userImg
+  var stockId = req.body.stockId
+  var productImg = req.body.productImg
+  var title = req.body.title
+  var review = req.body.review
+  var rating = req.body.rating
+  console.log(req.body)
+  var jwt = req.header('jwt')
+  if (jwt == SAdminJwt) {
+    if (userId && username && userImg && Number(stockId) && productImg && title && review && Number(rating)) {
+      const result = await prisma.zcom_rating.create({
+        data: {
+          userId: userId, username: username, userImg: userImg, stockId: stockId, productImg: productImg, title: title,
+          review: review, rating: Number(rating)
+        }
+      });
+      if (result) {
+        const finalRating = await prisma.zcom_rating.aggregate({
+          where: { stockId: stockId },
+          _avg: { rating: true },
+        });
+        await prisma.zcom_stock.update({
+          where: { id: Number(stockId) },
+          data: { rating: finalRating._avg.rating + "" }
+        });
+        res.json({ "data": result, "message": "Rating successfully added.", "success": true })
+      } else {
+        res.json({ "message": "Oops! An error occurred.", "success": false })
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
+app.put('/zcom/rating', async (req, res) => {
+  await executeLatinFunction()
+  var useful = req.body.useful
+  var id = req.body.id
+  console.log(req.body)
+  var jwt = req.header('jwt')
+  if (jwt == SAdminJwt) {
+    if (id && useful) {
+      const result = await prisma.zcom_rating.update({
+        where: { id: Number(id) },
+        data: { useful: useful == "true" ? { increment: 1 } : { decrement: 1 } }
+      });
+      if (result) {
+        res.json({ "data": result, "message": "Rating successfully added.", "success": true })
+      } else {
+        res.json({ "message": "Oops! An error occurred.", "success": false })
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
+app.get('/zcom/rating', async (req, res) => {
+  await executeLatinFunction()
+  var jwt = req.header('jwt')
+  var id = req.query.id
+  if (jwt == SAdminJwt) {
+    const result = await prisma.zcom_rating.findMany({
+      where: id ? { id: Number(id) } : {},
+      orderBy: { id: "desc" }
+    });
+    res.json({ "data": result, "message": "Rating successfully Fetched.", "success": true });
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
+app.delete('/zcom/rating', async (req, res) => {
+  await executeLatinFunction()
+  var jwt = req.header('jwt')
+  var id = req.query.id
+  if (jwt == SAdminJwt) {
+    if (Number(id)) {
+      const result = await prisma.zcom_rating.delete({
+        where: { id: Number(id) }
+      });
+      if (result) {
+        res.json({ "message": "Rating successfully Removed.", "success": true });
+      } else {
+        res.json({ "message": "No rating found.", "success": false });
       }
     } else {
       res.json({ "message": "Required fields missing", "success": false });
