@@ -9,6 +9,14 @@ Follow these instructions to get zcom_node_server up and running on your local m
 
 Node.js and npm installed on your system.
 
+Ensure you have the following tools installed:
+
+  • Node.js (>= 20.x)
+  
+  • npm or yarn
+  
+  • TypeScript (if not using npm/yarn to install)
+
 
 • **Installation**
 
