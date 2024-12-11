@@ -665,6 +665,431 @@ app.delete('/zcom/stock', async (req, res) => {
   }
 })
 
+app.post('/zcom/order', async (req, res) => {
+  await executeLatinFunction()
+  var userId = req.body.userId
+  var vendorId = req.body.vendorId
+  var items = req.body.items
+  var sku = req.body.sku
+  var category = req.body.category
+  var productName = req.body.productName
+  var image = req.body.image
+  var username = req.body.username
+  var phone = req.body.phone
+  var email = req.body.email
+  var addressId = req.body.addressId
+  var payMode = req.body.payMode
+  var payId = req.body.payId
+  var price = req.body.price
+  var coupon = req.body.coupon ?? ""
+  var couponCost = req.body.couponCost ?? ""
+  var discount = req.body.discount ?? ""
+  var shipPrice = req.body.shipPrice ?? ""
+  var deliveryCharge = req.body.deliveryCharge ?? ""
+  var packCharge = req.body.packCharge ?? ""
+  var total = req.body.total
+  var status = req.body.status
+  console.log(req.body)
+  var jwt = req.header('jwt')
+  if (jwt == SAdminJwt) {
+    if (userId && vendorId && items && sku && category && productName && image && username && phone && email && addressId && payMode &&
+      payId && price && total && status) {
+      const result = await prisma.zcom_order.create({
+        data: {
+          userId: userId, vendorId: vendorId, items: items, sku: sku, category: category, productName: productName, image: image,
+          username: username, phone: phone, email: email, addressId: addressId, payMode: payMode, payId: payId, price: price,
+          coupon: coupon, couponCost: couponCost, discount: discount, shipPrice: shipPrice,
+          deliveryCharge: deliveryCharge, packCharge: packCharge, total: total, status: status
+        }
+      });
+      if (result) {
+        res.json({ "data": result, "message": "Order successfully placed.", "success": true })
+      } else {
+        res.json({ "message": "Oops! An error occurred.", "success": false })
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
+app.get('/zcom/order', async (req, res) => {
+  await executeLatinFunction()
+  var id = req.query.id
+  const result = await prisma.zcom_order.findMany({
+    where: id ? { id: Number(id) } : {},
+    orderBy: { id: "desc" }
+  });
+  res.json({ "data": result, "message": "Order successfully Fetched.", "success": true });
+})
+
+app.delete('/zcom/order', async (req, res) => {
+  await executeLatinFunction()
+  var id = req.query.id
+  if (id) {
+    const result = await prisma.zcom_order.delete({
+      where: { id: Number(id) }
+    });
+    if (result) {
+      res.json({ "message": "Order successfully deleted.", "success": true });
+    } else {
+      res.json({ "message": "No order found.", "success": false });
+    }
+  } else {
+    res.json({ "message": "Required fields missing", "success": false });
+  }
+})
+
+app.post('/zcom/vendor', async (req, res) => {
+  await executeLatinFunction()
+  var vendorName = req.body.vendorName
+  var phone = req.body.phone
+  var email = req.body.email
+  var shopName = req.body.shopName
+  var shopImg = req.body.shopImg
+  var address = req.body.address
+  var latlong = req.body.latlong
+  var aadhaarNo = req.body.aadhaarNo
+  var aadhaarImg = req.body.aadhaarImg
+  var panNo = req.body.panNo
+  var panImg = req.body.panImg
+  var gstNo = req.body.gstNo
+  var status = req.body.status
+  console.log(req.body)
+  var jwt = req.header('jwt')
+  if (jwt == SAdminJwt) {
+    if (vendorName && phone && email && shopName && shopImg && address && latlong && aadhaarNo && aadhaarImg && panNo && panImg &&
+      gstNo && status) {
+      const findVendor = await prisma.zcom_vendor.findFirst({ where: { phone: phone } });
+      if (!findVendor) {
+        const result = await prisma.zcom_vendor.create({
+          data: {
+            vendorName: vendorName, phone: phone, email: email, shopName: shopName, shopImg: shopImg, address: address,
+            latlong: latlong, aadhaarNo: aadhaarNo, aadhaarImg: aadhaarImg, panNo: panNo, panImg: panImg, gstNo: gstNo, status: status
+          }
+        });
+        if (result) {
+          res.json({ "data": result, "message": "Vendor successfully register.", "success": true })
+        } else {
+          res.json({ "message": "Oops! An error occurred.", "success": false })
+        }
+      } else {
+        res.json({ "message": "Vendor mobile number already taken.", "success": false });
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
+app.put('/zcom/vendor', async (req, res) => {
+  await executeLatinFunction()
+  var vendorName = req.body.vendorName
+  var phone = req.body.phone
+  var email = req.body.email
+  var shopName = req.body.shopName
+  var shopImg = req.body.shopImg
+  var address = req.body.address
+  var latlong = req.body.latlong
+  var aadhaarNo = req.body.aadhaarNo
+  var aadhaarImg = req.body.aadhaarImg
+  var panNo = req.body.panNo
+  var panImg = req.body.panImg
+  var gstNo = req.body.gstNo
+  var status = req.body.status
+  var id = req.body.id
+  console.log(req.body)
+  var jwt = req.header('jwt')
+  if (jwt == SAdminJwt) {
+    if (Number(id)) {
+      const result = await prisma.zcom_vendor.update({
+        where: { id: Number(id) },
+        data: {
+          vendorName: vendorName, phone: phone, email: email, shopName: shopName, shopImg: shopImg, address: address,
+          latlong: latlong, aadhaarNo: aadhaarNo, aadhaarImg: aadhaarImg, panNo: panNo, panImg: panImg, gstNo: gstNo, status: status
+        }
+      });
+      if (result) {
+        res.json({ "message": "Vendor details successfully updated.", "success": true })
+      } else {
+        res.json({ "message": "Oops! An error occurred.", "success": false })
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
+app.get('/zcom/vendor', async (req, res) => {
+  await executeLatinFunction()
+  var jwt = req.header('jwt')
+  var id = req.query.id
+  if (jwt == SAdminJwt) {
+    const result = await prisma.zcom_vendor.findMany({
+      where: id ? { id: Number(id) } : {},
+      orderBy: { id: "desc" }
+    });
+    res.json({ "data": result, "message": "Vendor successfully Fetched.", "success": true });
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
+app.delete('/zcom/vendor', async (req, res) => {
+  await executeLatinFunction()
+  var jwt = req.header('jwt')
+  var id = req.query.id
+  if (jwt == SAdminJwt) {
+    if (Number(id)) {
+      const result = await prisma.zcom_vendor.delete({
+        where: { id: Number(id) }
+      });
+      if (result) {
+        res.json({ "message": "Vendor successfully Removed.", "success": true });
+      } else {
+        res.json({ "message": "No vendor found.", "success": false });
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
+
+app.post('/zcom/staff', async (req, res) => {
+  await executeLatinFunction()
+  var empId = req.body.empId
+  var role = req.body.role
+  var empName = req.body.empName
+  var phone = req.body.phone
+  var email = req.body.email
+  var address = req.body.address
+  var aadhaarNo = req.body.aadhaarNo
+  var joinDate = req.body.joinDate
+  var status = req.body.status
+  console.log(req.body)
+  var jwt = req.header('jwt')
+  if (jwt == SAdminJwt) {
+    if (empId && role && empName && phone && email && address && aadhaarNo && joinDate) {
+      const findStaff = await prisma.zcom_staff.findFirst({ where: { phone: phone } });
+      if (!findStaff) {
+        const result = await prisma.zcom_staff.create({
+          data: {
+            empId: empId, role: role, empName: empName, phone: phone, email: email, address: address,
+            aadhaarNo: aadhaarNo, joinDate: joinDate, status: status
+          }
+        });
+        if (result) {
+          res.json({ "data": result, "message": "staff successfully register.", "success": true })
+        } else {
+          res.json({ "message": "Oops! An error occurred.", "success": false })
+        }
+      } else {
+        res.json({ "message": "staff mobile number already taken.", "success": false });
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
+app.put('/zcom/staff', async (req, res) => {
+  await executeLatinFunction()
+  var empId = req.body.empId
+  var role = req.body.role
+  var empName = req.body.empName
+  var phone = req.body.phone
+  var email = req.body.email
+  var address = req.body.address
+  var aadhaarNo = req.body.aadhaarNo
+  var joinDate = req.body.joinDate
+  var status = req.body.status
+  var id = req.body.id
+  console.log(req.body)
+  var jwt = req.header('jwt')
+  if (jwt == SAdminJwt) {
+    if (Number(id)) {
+      const result = await prisma.zcom_staff.update({
+        where: { id: Number(id) },
+        data: {
+          empId: empId, role: role, empName: empName, phone: phone, email: email, address: address,
+          aadhaarNo: aadhaarNo, joinDate: joinDate, status: status
+        }
+      });
+      if (result) {
+        res.json({ "message": "staff details successfully updated.", "success": true })
+      } else {
+        res.json({ "message": "Oops! An error occurred.", "success": false })
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
+app.get('/zcom/staff', async (req, res) => {
+  await executeLatinFunction()
+  var jwt = req.header('jwt')
+  var id = req.query.id
+  if (jwt == SAdminJwt) {
+    const result = await prisma.zcom_staff.findMany({
+      where: id ? { id: Number(id) } : {},
+      orderBy: { id: "desc" }
+    });
+    res.json({ "data": result, "message": "staff successfully Fetched.", "success": true });
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
+app.delete('/zcom/staff', async (req, res) => {
+  await executeLatinFunction()
+  var jwt = req.header('jwt')
+  var id = req.query.id
+  if (jwt == SAdminJwt) {
+    if (Number(id)) {
+      const result = await prisma.zcom_staff.delete({
+        where: { id: Number(id) }
+      });
+      if (result) {
+        res.json({ "message": "staff successfully Removed.", "success": true });
+      } else {
+        res.json({ "message": "No staff found.", "success": false });
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
+app.post('/zcom/dPartner', async (req, res) => {
+  await executeLatinFunction()
+  var dPartnerId = req.body.dPartnerId
+  var vendorShop = req.body.vendorShop
+  var name = req.body.name
+  var phone = req.body.phone
+  var email = req.body.email
+  var address = req.body.address
+  var aadhaarNo = req.body.aadhaarNo
+  var drivingLicense = req.body.drivingLicense
+  var joinDate = req.body.joinDate
+  var status = req.body.status
+  console.log(req.body)
+  var jwt = req.header('jwt')
+  if (jwt == SAdminJwt) {
+    if (dPartnerId && vendorShop && name && phone && email && address && aadhaarNo && drivingLicense && joinDate) {
+      const findStaff = await prisma.zcom_delivery_partner.findFirst({ where: { phone: phone } });
+      if (!findStaff) {
+        const result = await prisma.zcom_delivery_partner.create({
+          data: {
+            dPartnerId: dPartnerId, vendorShop: vendorShop, name: name, phone: phone, email: email, address: address,
+            aadhaarNo: aadhaarNo, drivingLicense: drivingLicense, joinDate: joinDate, status: status
+          }
+        });
+        if (result) {
+          res.json({ "data": result, "message": "Deliver Partner successfully register.", "success": true })
+        } else {
+          res.json({ "message": "Oops! An error occurred.", "success": false })
+        }
+      } else {
+        res.json({ "message": "Deliver Partner mobile number already taken.", "success": false });
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
+app.put('/zcom/dPartner', async (req, res) => {
+  await executeLatinFunction()
+  var dPartnerId = req.body.dPartnerId
+  var vendorShop = req.body.vendorShop
+  var name = req.body.name
+  var phone = req.body.phone
+  var email = req.body.email
+  var address = req.body.address
+  var aadhaarNo = req.body.aadhaarNo
+  var drivingLicense = req.body.drivingLicense
+  var joinDate = req.body.joinDate
+  var status = req.body.status
+  var id = req.body.id
+  console.log(req.body)
+  var jwt = req.header('jwt')
+  if (jwt == SAdminJwt) {
+    if (Number(id)) {
+      const result = await prisma.zcom_delivery_partner.update({
+        where: { id: Number(id) },
+        data: {
+          dPartnerId: dPartnerId, vendorShop: vendorShop, name: name, phone: phone, email: email, address: address,
+          aadhaarNo: aadhaarNo, drivingLicense: drivingLicense, joinDate: joinDate, status: status
+        }
+      });
+      if (result) {
+        res.json({ "message": "Deliver Partner details successfully updated.", "success": true })
+      } else {
+        res.json({ "message": "Oops! An error occurred.", "success": false })
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
+app.get('/zcom/dPartner', async (req, res) => {
+  await executeLatinFunction()
+  var jwt = req.header('jwt')
+  var id = req.query.id
+  if (jwt == SAdminJwt) {
+    const result = await prisma.zcom_delivery_partner.findMany({
+      where: id ? { id: Number(id) } : {},
+      orderBy: { id: "desc" }
+    });
+    res.json({ "data": result, "message": "Deliver Partner successfully Fetched.", "success": true });
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
+app.delete('/zcom/dPartner', async (req, res) => {
+  await executeLatinFunction()
+  var jwt = req.header('jwt')
+  var id = req.query.id
+  if (jwt == SAdminJwt) {
+    if (Number(id)) {
+      const result = await prisma.zcom_delivery_partner.delete({
+        where: { id: Number(id) }
+      });
+      if (result) {
+        res.json({ "message": "Deliver Partner successfully Removed.", "success": true });
+      } else {
+        res.json({ "message": "No Deliver Partner found.", "success": false });
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
 app.post('/zcom/banner', async (req, res) => {
   await executeLatinFunction()
   var title = req.body.title

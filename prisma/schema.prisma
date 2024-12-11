@@ -58,6 +58,80 @@ model zcom_stock {
   createdOn     DateTime @default(now())
 }
 
+model zcom_order {
+  id             Int      @id @default(autoincrement())
+  userId         String
+  vendorId       String
+  items          String
+  sku            String
+  category       String
+  productName    String
+  image          String
+  username       String
+  phone          String
+  email          String
+  addressId      String
+  payMode        String
+  payId          String
+  price          String
+  coupon         String
+  couponCost     String
+  discount       String
+  shipPrice      String
+  deliveryCharge String
+  packCharge     String
+  total          String
+  status         String
+  createdOn      DateTime @default(now())
+}
+
+model zcom_vendor {
+  id         Int      @id @default(autoincrement())
+  vendorName String
+  phone      String
+  email      String
+  shopName   String
+  shopImg    String
+  address    String
+  latlong    String
+  aadhaarNo  String
+  aadhaarImg String
+  panNo      String
+  panImg     String
+  gstNo      String
+  status     String
+  createdOn  DateTime @default(now())
+}
+
+model zcom_staff {
+  id        Int      @id @default(autoincrement())
+  empId     String
+  role      String
+  empName   String
+  phone     String
+  email     String
+  address   String
+  aadhaarNo String
+  joinDate  String
+  status    String
+  createdOn DateTime @default(now())
+}
+
+model zcom_delivery_partner {
+  id             Int      @id @default(autoincrement())
+  dPartnerId     String
+  vendorShop     String
+  name           String
+  phone          String
+  email          String
+  address        String
+  aadhaarNo      String
+  drivingLicense String
+  joinDate       String
+  status         String
+  createdOn      DateTime @default(now())
+}
+
 model zcom_user {
   id        Int      @id @default(autoincrement())
   name      String
