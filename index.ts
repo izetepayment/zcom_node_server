@@ -119,7 +119,7 @@ app.post('/zcom/login', async (req, res) => {
   if (jwt == SAdminJwt) {
     if (phone && password) {
       if (phone == "9876543210" && password == "12345678") {
-        res.json({ name: "SAdmin", "authKey": "", "role": "superAdmin", "message": "Welcome to zcom.", "success": true });
+        res.json({ "name": "SAdmin", "authKey": "", "role": "superAdmin", "message": "Welcome to zcom.", "success": true });
       } else {
         const result = await prisma.zcom_admin.findFirst({
           where: { phone: phone }
