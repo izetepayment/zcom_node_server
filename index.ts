@@ -572,12 +572,10 @@ app.get('/zcom/subcategories', async (req, res) => {
 app.get('/zcom/trending_subcat', async (req, res) => {
   await executeLatinFunction()
   var jwt = req.header('jwt')
-  var id = req.query.id
   console.log(jwt)
-  console.log("cat")
+  console.log("trendcat ")
   // if (jwt == SAdminJwt) {
   const result = await prisma.zcom_subcategories.findMany({
-    where: id ? { id: Number(id) } : {},
     orderBy: { id: "asc" }
   });
   res.json({ "data": result, "message": "Sub categories successfully Fetched.", "success": true });
@@ -1633,15 +1631,15 @@ app.get('/zcom/blog', async (req, res) => {
   await executeLatinFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
-  if (jwt == SAdminJwt) {
+  // if (jwt == SAdminJwt) {
     const result = await prisma.zcom_blog.findMany({
       where: id ? { id: Number(id) } : {},
       orderBy: { id: "desc" }
     });
     res.json({ "data": result, "message": "Blog successfully Fetched.", "success": true });
-  } else {
-    res.json({ "message": "JWT does not match", "success": false });
-  }
+  // } else {
+  //   res.json({ "message": "JWT does not match", "success": false });
+  // }
 })
 
 app.delete('/zcom/blog', async (req, res) => {
