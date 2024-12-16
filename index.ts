@@ -26,7 +26,7 @@ const options = {
   ],
   credentials: true,
   methods: 'GET,HEAD,OPTIONS,PUT,PATCH,POST,DELETE',
-  origin:  ['https://main.d30lqrqrrga5m7.amplifyapp.com', 'http://localhost:3000'],
+  origin: ['https://main.d30lqrqrrga5m7.amplifyapp.com', 'http://localhost:3000'],
   preflightContinue: false,
 };
 
@@ -1790,3 +1790,8 @@ async function executeUtfFunction() {
   await prisma.$executeRaw(Prisma.sql`SET CHARACTER SET utf8`);
   await prisma.$executeRaw(Prisma.sql`SET character_set_connection=utf8`);
 }
+
+process.on('unhandledRejection', (reason, promise) => {
+  var res = reason
+  console.log('Unhandled Rejection at:', res)
+})
