@@ -13,8 +13,9 @@ app.use(express.json())
 app.use(cors())
 app.use(express.urlencoded({ extended: true, }))
 var router = express.Router();
-//options for cors midddleware
-const options: cors.CorsOptions = {
+
+// CORS options to allow specific origins
+const options = {
   allowedHeaders: [
     'Origin',
     'X-Requested-With',
@@ -24,9 +25,21 @@ const options: cors.CorsOptions = {
   ],
   credentials: true,
   methods: 'GET,HEAD,OPTIONS,PUT,PATCH,POST,DELETE',
-  origin: "networkgroups.in",
+  origin: (origin:any, callback:any) => {
+    const allowedOrigins = [
+      'https://main.d30lqrqrrga5m7.amplifyapp.com',
+      'http://localhost:3000',
+    ];
+
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   preflightContinue: false,
 };
+
 router.use(cors(options));
 router.options('*', cors(options));
 
