@@ -24,12 +24,12 @@
   },
   "dependencies": {
     "@prisma/client": "^6.0.1",
+    "axios": "^1.7.9",
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "moment-timezone": "^0.5.46",
     "multer": "^1.4.5-lts.1",
-    "prisma": "^6.0.1",
-    "zcom_node": "file:"
+    "prisma": "^6.0.1"
   }
 }

@@ -3,8 +3,8 @@
 
 datasource db {
   provider = "mysql"
+   url      = env("DATABASE_URL")
   // url      = "mysql://root:@localhost:3306/zcom"
-  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -19,6 +19,7 @@ model zcom_admin {
   email     String
   address   String
   password  String
+  role      String   @default("Admin")
   status    String   @default("created")
   auth_key  String
   createdOn DateTime @default(now())
@@ -55,6 +56,7 @@ model zcom_stock {
   shipPrice     String
   stockUpdate   String
   spec          String
+  highlights    String
   description   String
   rating        String   @default("4.5")
   createdOn     DateTime @default(now())
@@ -125,7 +127,9 @@ model zcom_staff {
   email     String
   address   String
   aadhaarNo String
+  password  String
   joinDate  String
+  auth_key  String
   status    String
   createdOn DateTime @default(now())
 }
@@ -181,10 +185,9 @@ model zcom_banner {
 }
 
 model zcom_blog {
-  id      Int     @id @default(autoincrement())
-  image   String
-  title   String
-  content String
-  createdAt DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  image     String
+  title     String
+  content   String
+  createdOn DateTime @default(now())
 }
-

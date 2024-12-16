@@ -6,6 +6,8 @@ import multer from 'multer';
 import fs from 'fs'
 import moment from 'moment-timezone'
 
+const axios = require("axios");
+
 var path = require('path');
 const prisma = new PrismaClient()
 const app = express()
@@ -13,8 +15,7 @@ app.use(express.json())
 app.use(cors())
 app.use(express.urlencoded({ extended: true, }))
 var router = express.Router();
-
-// CORS options to allow specific origins
+//options for cors midddleware
 const options = {
   allowedHeaders: [
     'Origin',
@@ -25,18 +26,7 @@ const options = {
   ],
   credentials: true,
   methods: 'GET,HEAD,OPTIONS,PUT,PATCH,POST,DELETE',
-  origin: (origin:any, callback:any) => {
-    const allowedOrigins = [
-      'https://main.d30lqrqrrga5m7.amplifyapp.com',
-      'http://localhost:3000',
-    ];
-
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin:  ['https://main.d30lqrqrrga5m7.amplifyapp.com', 'http://localhost:3000'],
   preflightContinue: false,
 };
 
@@ -54,7 +44,7 @@ app.get('/test', (req, res) => {
 const SAdminJwt = "Bearer 5e4aba774effe088d9cd99c434c0f240"
 
 app.post('/zcom/admin_register', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header("jwt")
   var name = req.body.name
   var phone = req.body.phone
@@ -94,7 +84,7 @@ app.post('/zcom/admin_register', async (req, res) => {
 })
 
 app.put('/zcom/admin', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header("jwt")
   var aId = req.body.aId
   var name = req.body.name
@@ -123,19 +113,35 @@ app.put('/zcom/admin', async (req, res) => {
 })
 
 app.post('/zcom/login', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header("jwt");
   var phone = req.body.mobile
   var password = req.body.password
+  var role = req.body.role
   console.log(jwt)
   console.log(req.body)
   if (jwt == SAdminJwt) {
-    if (phone && password) {
-      if (phone == "9876543210" && password == "12345678") {
-        res.json({ "name": "SAdmin", "authKey": "", "role": "superAdmin", "message": "Welcome to zcom.", "success": true });
-      } else {
+    if (phone && password && role) {
+      if (role == "SAdmin") {
         const result = await prisma.zcom_admin.findFirst({
-          where: { phone: phone }
+          where: { role: "SAdmin", phone: phone }
+        });
+        if (result) {
+          const resultPassword = await prisma.zcom_admin.findFirst({
+            where: { AND: [{ role: "SAdmin" }, { phone: phone }, { password: password }] }
+          });
+          if (resultPassword) {
+            console.log(resultPassword.auth_key)
+            res.json({ "id": resultPassword.id, name: resultPassword.name, "authKey": resultPassword.auth_key, "role": resultPassword.role, "message": "Welcome to zcom.", "success": true });
+          } else {
+            res.json({ "message": "Unauthorized credential", "success": false });
+          }
+        } else {
+          res.json({ "message": "Super Admin not found.", "success": false });
+        }
+      } else if (role == "Admin") {
+        const result = await prisma.zcom_admin.findFirst({
+          where: { role: "Admin", phone: phone }
         });
         if (result) {
           const resultPassword = await prisma.zcom_admin.findFirst({
@@ -143,12 +149,55 @@ app.post('/zcom/login', async (req, res) => {
           });
           if (resultPassword) {
             console.log(resultPassword.auth_key)
-            res.json({ name: resultPassword.name, "authKey": resultPassword.auth_key, "role": "subAdmin", "message": "Welcome to zcom.", "success": true });
+            res.json({ "id": resultPassword.id, name: resultPassword.name, "authKey": resultPassword.auth_key, "role": resultPassword.role, "message": "Welcome to zcom.", "success": true });
           } else {
             res.json({ "message": "Unauthorized credential", "success": false });
           }
         } else {
-          res.json({ "message": "User not found.", "success": false });
+          res.json({ "message": "Admin not found.", "success": false });
+        }
+      } else if (role == "Vendor") {
+        var data = {
+          "user_mobile": phone + "",
+          "user_mpin": password + "",
+          "ip_address": "0.0.0.0",
+          "mac_address": "00:00:00:00",
+          "latitude": "0.0",
+          "longitude": "0.0"
+        };
+        axios.post("https://atmzpe.com/agents_mobile/outlet/agent_login/validate", data, {
+          headers: {
+            "Content-Type": "application/json",
+            "AGENT-MApp-EncryptID": "ad8w4796zeptb45b64145ertlmob3a2chn5",
+            "AGENT-MApp-Encrypt-Passcode": "wzr4529rtl15u52wr200a426zet10147857mob45236wwin"
+          },
+        }).then((response: any) => {
+          // console.log(response.data)
+          if (response.data && response.data.user_details) {
+            res.json({ "id": response.data.user_details.user_id, name: response.data.user_details.user_name, "authKey": "NA", "role": "Vendor", "message": "Welcome to zcom.", "success": true });
+          } else {
+            res.json({ "message": response.data.status_desc, "success": false });
+          }
+        }).catch((err: any) => {
+          console.log("failed to add device", err);
+          // res.json({ "message": "Oops an error occured." + err, "success": false });
+        });
+      } else {
+        const result = await prisma.zcom_staff.findFirst({
+          where: { phone: phone }
+        });
+        if (result) {
+          const resultPassword = await prisma.zcom_staff.findFirst({
+            where: { AND: [{ phone: phone }, { password: password }] }
+          });
+          if (resultPassword) {
+            console.log(resultPassword.auth_key)
+            res.json({ "id": resultPassword.id, name: resultPassword.empName, "authKey": resultPassword.auth_key, "role": "Staff", "message": "Welcome to zcom.", "success": true });
+          } else {
+            res.json({ "message": "Unauthorized credential", "success": false });
+          }
+        } else {
+          res.json({ "message": "Staff not found.", "success": false });
         }
       }
     } else {
@@ -160,7 +209,7 @@ app.post('/zcom/login', async (req, res) => {
 })
 
 app.get('/zcom/admin', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header("jwt");
   var id = req.query.id
   var phone = req.query.phone
@@ -181,7 +230,7 @@ app.get('/zcom/admin', async (req, res) => {
 })
 
 app.delete('/zcom/admin', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
   console.log(jwt)
@@ -204,46 +253,46 @@ app.delete('/zcom/admin', async (req, res) => {
   }
 })
 
-// app.post('/zcom/user_register', async (req, res) => {
-  // await executeLatinFunction()
-//   var name = req.body.name
-//   var cc = req.body.cc
-//   var phone = req.body.phone
-//   var email = req.body.email
-//   var password = req.body.password
-//   var otp = Math.floor(1000 + Math.random() * 9000);
-//   console.log(req.body)
-//   if (name && cc && phone && email && password) {
-//     const resultUser = await prisma.zcom_user.findFirst({
-//       where: { phone: phone }
-//     });
-//     if (!resultUser) {
-//       const authkey = require('crypto').randomBytes(16).toString('hex')
-//       const result = await prisma.zcom_user.create({
-//         data: { name: name, cc: cc, phone: phone, email: email, password: password, otp: otp + "", auth_key: authkey }
-//       });
-//       if (result) {
-//         res.json({ "message": "OTP: " + result.otp, "success": true })
-//       } else {
-//         res.json({ "message": "Oops! An error occurred.", "success": false })
-//       }
-//     } else {
-//       const oldUser = await prisma.zcom_user.findFirst({
-//         where: { phone: phone }
-//       });
-//       if (oldUser.status == "created") {
-//         res.json({ "message": "OTP: " + oldUser.otp, "success": true })
-//       } else {
-//         res.json({ "message": "Phone number is already in use. current user", "success": false })
-//       }
-//     }
-//   } else {
-//     res.json({ "message": "Required fields missing", "success": false });
-//   }
-// })
+app.post('/zcom/user_register', async (req, res) => {
+  await executeLatinFunction()
+  var name = req.body.name
+  var cc = req.body.cc
+  var phone = req.body.phone
+  var email = req.body.email
+  var password = req.body.password
+  var otp = Math.floor(1000 + Math.random() * 9000);
+  console.log(req.body)
+  if (name && cc && phone && email && password) {
+    const resultUser = await prisma.zcom_user.findFirst({
+      where: { phone: phone }
+    });
+    if (!resultUser) {
+      const authkey = require('crypto').randomBytes(16).toString('hex')
+      const result = await prisma.zcom_user.create({
+        data: { name: name, cc: cc, phone: phone, email: email, password: password, otp: otp + "", auth_key: authkey }
+      });
+      if (result) {
+        res.json({ "message": "OTP: " + result.otp, "success": true })
+      } else {
+        res.json({ "message": "Oops! An error occurred.", "success": false })
+      }
+    } else {
+      // const oldUser = await prisma.zcom_user.findFirst({
+      //   where: { phone: phone }
+      // });
+      // if (oldUser.status == "created") {
+      //   res.json({ "message": "OTP: " + oldUser.otp, "success": true })
+      // } else {
+      res.json({ "message": "Phone number is already in use. current user", "success": false })
+      // }
+    }
+  } else {
+    res.json({ "message": "Required fields missing", "success": false });
+  }
+})
 
 app.post('/zcom/user_verify_otp', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var phone = req.body.phone
   var otp = req.body.otp
   console.log(req.body)
@@ -292,7 +341,7 @@ app.post('/zcom/user_verify_otp', async (req, res) => {
 // })
 
 app.post('/zcom/user_login', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var phone = req.body.phone
   var password = req.body.password
   console.log(req.body)
@@ -325,7 +374,7 @@ app.post('/zcom/user_login', async (req, res) => {
 })
 
 app.get('/zcom/user', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var id = req.query.id
   var phone = req.query.phone
   console.log(req.query)
@@ -341,9 +390,9 @@ app.get('/zcom/user', async (req, res) => {
 })
 
 app.delete('/zcom/user', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var id = req.query.id
-  if (id) {
+  if (Number(id)) {
     const result = await prisma.zcom_user.delete({
       where: { id: Number(id) }
     });
@@ -358,20 +407,27 @@ app.delete('/zcom/user', async (req, res) => {
 })
 
 app.post('/zcom/categories', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var category = req.body.category
   var image = req.body.image
   console.log(req.body)
   if (jwt == SAdminJwt) {
     if (category && image) {
-      const result = await prisma.zcom_categories.create({
-        data: { category: category, image: image }
+      const findCat = await prisma.zcom_categories.findFirst({
+        where: { category: category }
       });
-      if (result) {
-        res.json({ "data": result, "message": "categories successfully created.", "success": true })
+      if (!findCat) {
+        const result = await prisma.zcom_categories.create({
+          data: { category: category, image: image }
+        });
+        if (result) {
+          res.json({ "data": result, "message": "categories successfully added.", "success": true })
+        } else {
+          res.json({ "message": "Oops! An error occurred.", "success": false })
+        }
       } else {
-        res.json({ "message": "Oops! An error occurred.", "success": false })
+        res.json({ "message": "Category already added.", "success": false });
       }
     } else {
       res.json({ "message": "Required fields missing", "success": false });
@@ -382,14 +438,14 @@ app.post('/zcom/categories', async (req, res) => {
 })
 
 app.put('/zcom/categories', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var category = req.body.category
   var image = req.body.image
   var id = req.body.id
   if (jwt == SAdminJwt) {
     console.log(req.body)
-    if (id) {
+    if (Number(id)) {
       const result = await prisma.zcom_categories.update({
         where: { id: Number(id) },
         data: { category: category, image: image }
@@ -408,26 +464,26 @@ app.put('/zcom/categories', async (req, res) => {
 })
 
 app.get('/zcom/categories', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
-  if (jwt == SAdminJwt) {
-    const result = await prisma.zcom_categories.findMany({
-      where: id ? { id: Number(id) } : {},
-      orderBy: { id: "desc" }
-    });
-    res.json({ "data": result, "message": "categories successfully Fetched.", "success": true });
-  } else {
-    res.json({ "message": "JWT does not match", "success": false });
-  }
+  // if (jwt == SAdminJwt) {
+  const result = await prisma.zcom_categories.findMany({
+    where: id ? { id: Number(id) } : {},
+    orderBy: { id: "asc" }
+  });
+  res.json({ "data": result, "message": "categories successfully Fetched.", "success": true });
+  // } else {
+  //   res.json({ "message": "JWT does not match", "success": false });
+  // }
 })
 
 app.delete('/zcom/categories', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
   if (jwt == SAdminJwt) {
-    if (id) {
+    if (Number(id)) {
       const result = await prisma.zcom_categories.delete({
         where: { id: Number(id) }
       });
@@ -445,15 +501,16 @@ app.delete('/zcom/categories', async (req, res) => {
 })
 
 app.post('/zcom/subcategories', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var categoryId = req.body.categoryId
   var subCategory = req.body.subCategory
+  var image = req.body.image
   console.log(req.body)
   if (jwt == SAdminJwt) {
-    if (categoryId && subCategory) {
+    if (categoryId && subCategory && image) {
       const result = await prisma.zcom_subcategories.create({
-        data: { categoryId: categoryId, subCategory: subCategory }
+        data: { categoryId: categoryId, subCategory: subCategory, image: image }
       });
       if (result) {
         res.json({ "data": result, "message": "Sub categories successfully created.", "success": true })
@@ -469,17 +526,18 @@ app.post('/zcom/subcategories', async (req, res) => {
 })
 
 app.put('/zcom/subcategories', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var categoryId = req.body.categoryId
   var subCategory = req.body.subCategory
+  var image = req.body.image
   var id = req.body.id
   if (jwt == SAdminJwt) {
     console.log(req.body)
     if (Number(id)) {
       const result = await prisma.zcom_subcategories.update({
         where: { id: Number(id) },
-        data: { categoryId: categoryId, subCategory: subCategory }
+        data: { categoryId: categoryId, subCategory: subCategory, image: image }
       });
       if (result) {
         res.json({ "message": "Sub categories successfully updated.", "success": true })
@@ -495,44 +553,6 @@ app.put('/zcom/subcategories', async (req, res) => {
 })
 
 app.get('/zcom/subcategories', async (req, res) => {
-  // await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
-  console.log(jwt)
-  console.log("cat")
-  if (jwt == SAdminJwt) {
-    const result = await prisma.zcom_subcategories.findMany({
-      where: id ? { id: Number(id) } : {},
-      orderBy: { id: "desc" }
-    });
-    res.json({ "data": result, "message": "Sub categories successfully Fetched.", "success": true });
-  } else {
-    res.json({ "message": "JWT does not match", "success": false });
-  }
-})
-
-app.delete('/zcom/subcategories', async (req, res) => {
-  // await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
-  if (jwt == SAdminJwt) {
-    if (id) {
-      const result = await prisma.zcom_subcategories.delete({
-        where: { id: Number(id) }
-      });
-      if (result) {
-        res.json({ "message": "Sub categories successfully deleted.", "success": true });
-      } else {
-        res.json({ "message": "No Sub categories found.", "success": false });
-      }
-    } else {
-      res.json({ "message": "Required fields missing", "success": false });
-    }
-  } else {
-    res.json({ "message": "JWT does not match", "success": false });
-  }
-})
-app.get('/zcom/trending_subcat', async (req, res) => {
   await executeLatinFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
@@ -548,8 +568,48 @@ app.get('/zcom/trending_subcat', async (req, res) => {
   //   res.json({ "message": "JWT does not match", "success": false });
   // }
 })
+
+app.get('/zcom/trending_subcat', async (req, res) => {
+  await executeLatinFunction()
+  var jwt = req.header('jwt')
+  var id = req.query.id
+  console.log(jwt)
+  console.log("cat")
+  // if (jwt == SAdminJwt) {
+  const result = await prisma.zcom_subcategories.findMany({
+    where: id ? { id: Number(id) } : {},
+    orderBy: { id: "asc" }
+  });
+  res.json({ "data": result, "message": "Sub categories successfully Fetched.", "success": true });
+  // } else {
+  //   res.json({ "message": "JWT does not match", "success": false });
+  // }
+})
+
+app.delete('/zcom/subcategories', async (req, res) => {
+  await executeLatinFunction()
+  var jwt = req.header('jwt')
+  var id = req.query.id
+  if (jwt == SAdminJwt) {
+    if (Number(id)) {
+      const result = await prisma.zcom_subcategories.delete({
+        where: { id: Number(id) }
+      });
+      if (result) {
+        res.json({ "message": "Sub categories successfully deleted.", "success": true });
+      } else {
+        res.json({ "message": "No Sub categories found.", "success": false });
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
 app.post('/zcom/stock', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var vendorId = req.body.vendorId
   var categoryId = req.body.categoryId
   var subcategoryId = req.body.subcategoryId
@@ -564,6 +624,7 @@ app.post('/zcom/stock', async (req, res) => {
   var shipPrice = req.body.shipPrice
   var stockUpdate = req.body.stockUpdate
   var spec = req.body.spec
+  var highlights = req.body.highlights
   var description = req.body.description
   console.log(req.body)
   var jwt = req.header('jwt')
@@ -574,7 +635,7 @@ app.post('/zcom/stock', async (req, res) => {
         data: {
           vendorId: vendorId, categoryId: categoryId, subcategoryId: subcategoryId, sku: sku, productName: productName, image: image,
           price: price, strikePrice: strikePrice, qty: qty, discount: discount, coupon: coupon, shipPrice: shipPrice, stockUpdate: stockUpdate,
-          spec: spec, description: description
+          spec: spec, highlights: highlights, description: description
         }
       });
       if (result) {
@@ -591,7 +652,7 @@ app.post('/zcom/stock', async (req, res) => {
 })
 
 app.put('/zcom/stock', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var vendorId = req.body.vendorId
   var categoryId = req.body.categoryId
   var subcategoryId = req.body.subcategoryId
@@ -606,6 +667,7 @@ app.put('/zcom/stock', async (req, res) => {
   var shipPrice = req.body.shipPrice
   var stockUpdate = req.body.stockUpdate
   var spec = req.body.spec
+  var highlights = req.body.highlights
   var description = req.body.description
   var id = req.body.id
   console.log(req.body)
@@ -617,7 +679,7 @@ app.put('/zcom/stock', async (req, res) => {
         data: {
           vendorId: vendorId, categoryId: categoryId, subcategoryId: subcategoryId, sku: sku, productName: productName, image: image,
           price: price, strikePrice: strikePrice, qty: qty, discount: discount, coupon: coupon, shipPrice: shipPrice, stockUpdate: stockUpdate,
-          spec: spec, description: description
+          spec: spec, highlights: highlights, description: description
         }
       });
       if (result) {
@@ -635,6 +697,7 @@ app.put('/zcom/stock', async (req, res) => {
 
 app.get('/zcom/stock', async (req, res) => {
   // await executeLatinFunction()
+  await executeUtfFunction()
   var vendorDet = new Map();
   var categoryDet = new Map();
   var subcatDet = new Map();
@@ -649,48 +712,70 @@ app.get('/zcom/stock', async (req, res) => {
   });
   var jwt = req.header('jwt')
   var id = req.query.id
-  if (jwt == SAdminJwt) {
-    const result = (await prisma.zcom_stock.findMany({
-      where: id ? { id: Number(id) } : {},
-      orderBy: { id: "desc" }
-    })).map(function (val, index) {
-      return {
-        "id": val.id,
-        "vendor": vendorDet.has(val.vendorId) ? vendorDet.get(val.vendorId) : "NA",
-        "category": categoryDet.has(val.categoryId) ? categoryDet.get(val.categoryId) : "NA",
-        "subcategory": subcatDet.has(val.subcategoryId) ? subcatDet.get(val.subcategoryId) : "NA",
-        "sku": val.sku, "productName": val.productName, "image": val.image, "price": val.price,
-        "strikePrice": val.strikePrice, "qty": val.qty, "discount": val.discount, "coupon": val.coupon,
-        "shipPrice": val.shipPrice, "stockUpdate": val.stockUpdate, "spec": val.spec,
-        "description": val.description, "createdOn": val.createdOn
-      }
-    });
-    res.json({ "data": result, "message": "Product successfully Fetched.", "success": true });
-  } else {
-    res.json({ "message": "JWT does not match", "success": false });
-  }
+  var searchKey = req.query.searchKey
+  // if (jwt == SAdminJwt) {
+  const result = (await prisma.zcom_stock.findMany({
+    where: id ? { id: Number(id) } : searchKey ? { productName: { contains: searchKey + "" } } : {},
+    orderBy: { id: "desc" }
+  })).map(async function (val, index) {
+    const totalreview = await prisma.zcom_rating.findMany({
+      where: { stockId: id + "" }
+    })
+    return {
+      "id": val.id,
+      "vendor": vendorDet.has(val.vendorId) ? vendorDet.get(val.vendorId) : "NA",
+      "category": categoryDet.has(val.categoryId) ? categoryDet.get(val.categoryId) : "NA",
+      "subcategory": subcatDet.has(val.subcategoryId) ? subcatDet.get(val.subcategoryId) : "NA",
+      "sku": val.sku, "productName": val.productName, "image": val.image, "price": val.price,
+      "strikePrice": val.strikePrice, "qty": val.qty, "discount": val.discount, "coupon": val.coupon,
+      "shipPrice": val.shipPrice, "stockUpdate": val.stockUpdate, "spec": val.spec, "highlights": val.highlights,
+      "description": val.description, "rating": val.rating, "createdOn": val.createdOn
+    }
+  });
+  res.json({ "data": result, "message": "Product successfully Fetched.", "success": true });
+  // } else {
+  //   res.json({ "message": "JWT does not match", "success": false });
+  // }
 })
 
-app.delete('/zcom/stock', async (req, res) => {
+app.get('/zcom/single_product', async (req, res) => {
   // await executeLatinFunction()
+  await executeUtfFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
-  if (jwt == SAdminJwt) {
-    if (Number(id)) {
-      const result = await prisma.zcom_stock.delete({
-        where: { id: Number(id) }
-      });
-      if (result) {
-        res.json({ "message": "Product successfully deleted.", "success": true });
-      } else {
-        res.json({ "message": "No Product found.", "success": false });
-      }
-    } else {
-      res.json({ "message": "Required fields missing", "success": false });
+  // if (jwt == SAdminJwt) {
+  const result = (await prisma.zcom_stock.findMany({
+    where: { id: Number(id) },
+    orderBy: { id: "desc" }
+  })).map(async function (val, index) {
+    const totalreview = await prisma.zcom_rating.count({
+      where: { stockId: id + "" }
+    })
+    return {
+      "id": val.id,
+      "sku": val.sku, "productName": val.productName, "image": val.image, "price": val.price,
+      "strikePrice": val.strikePrice, "qty": val.qty, "discount": val.discount, "coupon": val.coupon,
+      "shipPrice": val.shipPrice, "stockUpdate": val.stockUpdate, "spec": val.spec, "highlights": val.highlights,
+      "description": val.description, "rating": val.rating, "createdOn": val.createdOn, "reviews": totalreview
     }
-  } else {
-    res.json({ "message": "JWT does not match", "success": false });
-  }
+  });
+  res.json({ "data": result, "message": "Product successfully Fetched.", "success": true });
+  // } else {
+  //   res.json({ "message": "JWT does not match", "success": false });
+  // }
+})
+
+app.post('/zcom/fetchProductByIds', async (req, res) => {
+  await executeUtfFunction()
+  // var jwt = req.header('jwt')
+  var id = req.body.id
+  const result = await prisma.zcom_stock.findMany({
+    where: { id: { in: id } }
+  });
+  res.json({ "data": result, "message": "Successfully Fetched.", "success": true });
+  // } else {
+  //   res.json({ "message": "JWT does not match", "success": false });
+  // }
 })
 
 app.get('/zcom/feature_product', async (req, res) => {
@@ -743,8 +828,30 @@ app.get('/zcom/limited_product', async (req, res) => {
   // }
 })
 
+app.delete('/zcom/stock', async (req, res) => {
+  await executeLatinFunction()
+  var jwt = req.header('jwt')
+  var id = req.query.id
+  if (jwt == SAdminJwt) {
+    if (Number(id)) {
+      const result = await prisma.zcom_stock.delete({
+        where: { id: Number(id) }
+      });
+      if (result) {
+        res.json({ "message": "Product successfully deleted.", "success": true });
+      } else {
+        res.json({ "message": "No Product found.", "success": false });
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
+
 app.post('/zcom/cart', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var userId = req.body.userId
   var userName = req.body.userName
@@ -783,7 +890,7 @@ app.post('/zcom/cart', async (req, res) => {
 })
 
 app.post('/zcom/cart_app', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var userId = req.body.userId
   var userName = req.body.userName
@@ -836,7 +943,7 @@ app.post('/zcom/cart_app', async (req, res) => {
 })
 
 app.get("/zcom/cart", async (req, res) => {
-  // await executeLatinFunction();
+  await executeLatinFunction();
   var jwt = req.header('jwt')
   if (jwt == SAdminJwt) {
     var userId = req.query.userId
@@ -854,7 +961,7 @@ app.get("/zcom/cart", async (req, res) => {
 });
 
 app.post('/zcom/order', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var userId = req.body.userId
   var vendorId = req.body.vendorId
   var items = req.body.items
@@ -904,7 +1011,7 @@ app.post('/zcom/order', async (req, res) => {
 })
 
 app.get('/zcom/order', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var id = req.query.id
   const result = await prisma.zcom_order.findMany({
     where: id ? { id: Number(id) } : {},
@@ -914,9 +1021,9 @@ app.get('/zcom/order', async (req, res) => {
 })
 
 app.delete('/zcom/order', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var id = req.query.id
-  if (id) {
+  if (Number(id)) {
     const result = await prisma.zcom_order.delete({
       where: { id: Number(id) }
     });
@@ -931,7 +1038,7 @@ app.delete('/zcom/order', async (req, res) => {
 })
 
 app.post('/zcom/vendor', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var vendorName = req.body.vendorName
   var phone = req.body.phone
   var email = req.body.email
@@ -975,7 +1082,7 @@ app.post('/zcom/vendor', async (req, res) => {
 })
 
 app.put('/zcom/vendor', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var vendorName = req.body.vendorName
   var phone = req.body.phone
   var email = req.body.email
@@ -1015,7 +1122,7 @@ app.put('/zcom/vendor', async (req, res) => {
 })
 
 app.get('/zcom/vendor', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
   if (jwt == SAdminJwt) {
@@ -1030,7 +1137,7 @@ app.get('/zcom/vendor', async (req, res) => {
 })
 
 app.delete('/zcom/vendor', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
   if (jwt == SAdminJwt) {
@@ -1053,7 +1160,7 @@ app.delete('/zcom/vendor', async (req, res) => {
 
 
 app.post('/zcom/staff', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var empId = req.body.empId
   var role = req.body.role
   var empName = req.body.empName
@@ -1061,18 +1168,20 @@ app.post('/zcom/staff', async (req, res) => {
   var email = req.body.email
   var address = req.body.address
   var aadhaarNo = req.body.aadhaarNo
+  var password = req.body.password
   var joinDate = req.body.joinDate
   var status = req.body.status
   console.log(req.body)
   var jwt = req.header('jwt')
   if (jwt == SAdminJwt) {
-    if (empId && role && empName && phone && email && address && aadhaarNo && joinDate) {
+    if (empId && role && empName && phone && email && address && aadhaarNo && password && joinDate) {
       const findStaff = await prisma.zcom_staff.findFirst({ where: { phone: phone } });
       if (!findStaff) {
+        const authkey = require('crypto').randomBytes(16).toString('hex')
         const result = await prisma.zcom_staff.create({
           data: {
             empId: empId, role: role, empName: empName, phone: phone, email: email, address: address,
-            aadhaarNo: aadhaarNo, joinDate: joinDate, status: status
+            aadhaarNo: aadhaarNo, password: password, joinDate: joinDate, auth_key: authkey, status: status
           }
         });
         if (result) {
@@ -1092,7 +1201,7 @@ app.post('/zcom/staff', async (req, res) => {
 })
 
 app.put('/zcom/staff', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var empId = req.body.empId
   var role = req.body.role
   var empName = req.body.empName
@@ -1128,7 +1237,7 @@ app.put('/zcom/staff', async (req, res) => {
 })
 
 app.get('/zcom/staff', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
   if (jwt == SAdminJwt) {
@@ -1143,7 +1252,7 @@ app.get('/zcom/staff', async (req, res) => {
 })
 
 app.delete('/zcom/staff', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
   if (jwt == SAdminJwt) {
@@ -1165,7 +1274,7 @@ app.delete('/zcom/staff', async (req, res) => {
 })
 
 app.post('/zcom/dPartner', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var dPartnerId = req.body.dPartnerId
   var vendorShop = req.body.vendorShop
   var name = req.body.name
@@ -1205,7 +1314,7 @@ app.post('/zcom/dPartner', async (req, res) => {
 })
 
 app.put('/zcom/dPartner', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var dPartnerId = req.body.dPartnerId
   var vendorShop = req.body.vendorShop
   var name = req.body.name
@@ -1242,7 +1351,7 @@ app.put('/zcom/dPartner', async (req, res) => {
 })
 
 app.get('/zcom/dPartner', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
   if (jwt == SAdminJwt) {
@@ -1257,7 +1366,7 @@ app.get('/zcom/dPartner', async (req, res) => {
 })
 
 app.delete('/zcom/dPartner', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
   if (jwt == SAdminJwt) {
@@ -1279,7 +1388,7 @@ app.delete('/zcom/dPartner', async (req, res) => {
 })
 
 app.post('/zcom/rating', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var userId = req.body.userId
   var username = req.body.username
   var userImg = req.body.userImg
@@ -1320,7 +1429,7 @@ app.post('/zcom/rating', async (req, res) => {
 })
 
 app.put('/zcom/rating', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var useful = req.body.useful
   var id = req.body.id
   console.log(req.body)
@@ -1332,7 +1441,7 @@ app.put('/zcom/rating', async (req, res) => {
         data: { useful: useful == "true" ? { increment: 1 } : { decrement: 1 } }
       });
       if (result) {
-        res.json({ "data": result, "message": "Rating successfully added.", "success": true })
+        res.json({ "data": result, "message": "Rating successfully updated.", "success": true })
       } else {
         res.json({ "message": "Oops! An error occurred.", "success": false })
       }
@@ -1345,7 +1454,7 @@ app.put('/zcom/rating', async (req, res) => {
 })
 
 app.get('/zcom/rating', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
   if (jwt == SAdminJwt) {
@@ -1360,7 +1469,7 @@ app.get('/zcom/rating', async (req, res) => {
 })
 
 app.delete('/zcom/rating', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var jwt = req.header('jwt')
   var id = req.query.id
   if (jwt == SAdminJwt) {
@@ -1382,163 +1491,183 @@ app.delete('/zcom/rating', async (req, res) => {
 })
 
 app.post('/zcom/banner', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var title = req.body.title
   var banner = req.body.banner
+  var jwt = req.header('jwt')
   console.log(req.body)
-  if (title && banner) {
-    const result = await prisma.zcom_banner.create({
-      data: { title: title, banner: banner }
-    });
-    if (result) {
-      res.json({ "data": result, "message": "Banner successfully created.", "success": true })
+  if (jwt == SAdminJwt) {
+    if (title && banner) {
+      const result = await prisma.zcom_banner.create({
+        data: { title: title, banner: banner }
+      });
+      if (result) {
+        res.json({ "data": result, "message": "Banner successfully created.", "success": true })
+      } else {
+        res.json({ "message": "Oops! An error occurred.", "success": false })
+      }
     } else {
-      res.json({ "message": "Oops! An error occurred.", "success": false })
+      res.json({ "message": "Required fields missing", "success": false });
     }
   } else {
-    res.json({ "message": "Required fields missing", "success": false });
+    res.json({ "message": "JWT does not match", "success": false });
   }
 })
 
 app.put('/zcom/banner', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
+  var jwt = req.header('jwt')
   var title = req.body.title
   var banner = req.body.banner
   var id = req.body.id
   console.log(req.body)
-  if (id) {
-    const result = await prisma.zcom_banner.update({
-      where: { id: Number(id) },
-      data: { title: title, banner: banner }
-    });
-    if (result) {
-      res.json({ "message": "Banner successfully updated.", "success": true })
+  if (jwt == SAdminJwt) {
+    if (Number(id)) {
+      const result = await prisma.zcom_banner.update({
+        where: { id: Number(id) },
+        data: { title: title, banner: banner }
+      });
+      if (result) {
+        res.json({ "message": "Banner successfully updated.", "success": true })
+      } else {
+        res.json({ "message": "Oops! An error occurred.", "success": false })
+      }
     } else {
-      res.json({ "message": "Oops! An error occurred.", "success": false })
+      res.json({ "message": "Required fields missing", "success": false });
     }
   } else {
-    res.json({ "message": "Required fields missing", "success": false });
+    res.json({ "message": "JWT does not match", "success": false });
   }
 })
 
 app.get('/zcom/banner', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
+  var jwt = req.header('jwt')
   var id = req.query.id
+  // if (jwt == SAdminJwt) {
   const result = await prisma.zcom_banner.findMany({
     where: id ? { id: Number(id) } : {},
     orderBy: { id: "desc" }
   });
   res.json({ "data": result, "message": "Banner successfully Fetched.", "success": true });
+  // } else {
+  //   res.json({ "message": "JWT does not match", "success": false });
+  // }
 })
 
 app.delete('/zcom/banner', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
+  var jwt = req.header('jwt')
   var id = req.query.id
-  if (id) {
-    const result = await prisma.zcom_banner.delete({
-      where: { id: Number(id) }
-    });
-    if (result) {
-      res.json({ "message": "Banner successfully deleted.", "success": true });
+  if (jwt == SAdminJwt) {
+    if (Number(id)) {
+      const result = await prisma.zcom_banner.delete({
+        where: { id: Number(id) }
+      });
+      if (result) {
+        res.json({ "message": "Banner successfully deleted.", "success": true });
+      } else {
+        res.json({ "message": "No banner found.", "success": false });
+      }
     } else {
-      res.json({ "message": "No banner found.", "success": false });
+      res.json({ "message": "Required fields missing", "success": false });
     }
   } else {
-    res.json({ "message": "Required fields missing", "success": false });
+    res.json({ "message": "JWT does not match", "success": false });
   }
 })
 
-// app.post('/zcom/blog', async (req, res) => {
-//   // await executeLatinFunction()
-//   var image = req.body.image
-//   var title = req.body.title
-//   var content = req.body.content
-//   console.log(req.body)
-//   var jwt = req.header('jwt')
-//   if (jwt == SAdminJwt) {
-//     if (image && title && content) {
-//       const result = await prisma.zcom_blog.create({
-//         data: { image: image, title: title, content: content }
-//       });
-//       if (result) {
-//         res.json({ "data": result, "message": "Blog successfully added.", "success": true })
-//       } else {
-//         res.json({ "message": "Oops! An error occurred.", "success": false })
-//       }
-//     } else {
-//       res.json({ "message": "Required fields missing", "success": false });
-//     }
-//   } else {
-//     res.json({ "message": "JWT does not match", "success": false });
-//   }
-// })
+app.post('/zcom/blog', async (req, res) => {
+  await executeLatinFunction()
+  var image = req.body.image
+  var title = req.body.title
+  var content = req.body.content
+  console.log(req.body)
+  var jwt = req.header('jwt')
+  if (jwt == SAdminJwt) {
+    if (image && title && content) {
+      const result = await prisma.zcom_blog.create({
+        data: { image: image, title: title, content: content }
+      });
+      if (result) {
+        res.json({ "data": result, "message": "Blog successfully added.", "success": true })
+      } else {
+        res.json({ "message": "Oops! An error occurred.", "success": false })
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
 
-// app.put('/zcom/blog', async (req, res) => {
-//   // await executeLatinFunction()
-//   var image = req.body.image
-//   var title = req.body.title
-//   var content = req.body.content
-//   var id = req.body.id
-//   console.log(req.body)
-//   var jwt = req.header('jwt')
-//   if (jwt == SAdminJwt) {
-//     if (Number(id)) {
-//       const result = await prisma.zcom_blog.update({
-//         where: { id: Number(id) },
-//         data: { image: image, title: title, content: content }
-//       });
-//       if (result) {
-//         res.json({ "data": result, "message": "Blog successfully updated.", "success": true })
-//       } else {
-//         res.json({ "message": "Oops! An error occurred.", "success": false })
-//       }
-//     } else {
-//       res.json({ "message": "Required fields missing", "success": false });
-//     }
-//   } else {
-//     res.json({ "message": "JWT does not match", "success": false });
-//   }
-// })
+app.put('/zcom/blog', async (req, res) => {
+  await executeLatinFunction()
+  var image = req.body.image
+  var title = req.body.title
+  var content = req.body.content
+  var id = req.body.id
+  console.log(req.body)
+  var jwt = req.header('jwt')
+  if (jwt == SAdminJwt) {
+    if (Number(id)) {
+      const result = await prisma.zcom_blog.update({
+        where: { id: Number(id) },
+        data: { image: image, title: title, content: content }
+      });
+      if (result) {
+        res.json({ "data": result, "message": "Blog successfully updated.", "success": true })
+      } else {
+        res.json({ "message": "Oops! An error occurred.", "success": false })
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
 
-// app.get('/zcom/blog', async (req, res) => {
-//   // await executeLatinFunction()
-//   var jwt = req.header('jwt')
-//   var id = req.query.id
-//   if (jwt == SAdminJwt) {
-//     const result = await prisma.zcom_blog.findMany({
-//       where: id ? { id: Number(id) } : {},
-//       orderBy: { id: "desc" }
-//     });
-//     res.json({ "data": result, "message": "Blog successfully Fetched.", "success": true });
-//   } else {
-//     res.json({ "message": "JWT does not match", "success": false });
-//   }
-// })
+app.get('/zcom/blog', async (req, res) => {
+  await executeLatinFunction()
+  var jwt = req.header('jwt')
+  var id = req.query.id
+  if (jwt == SAdminJwt) {
+    const result = await prisma.zcom_blog.findMany({
+      where: id ? { id: Number(id) } : {},
+      orderBy: { id: "desc" }
+    });
+    res.json({ "data": result, "message": "Blog successfully Fetched.", "success": true });
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
 
-// app.delete('/zcom/blog', async (req, res) => {
-//   await executeLatinFunction()
-//   var jwt = req.header('jwt')
-//   var id = req.query.id
-//   if (jwt == SAdminJwt) {
-//     if (Number(id)) {
-//       const result = await prisma.zcom_blog.delete({
-//         where: { id: Number(id) }
-//       });
-//       if (result) {
-//         res.json({ "message": "Blog successfully Removed.", "success": true });
-//       } else {
-//         res.json({ "message": "No blog found.", "success": false });
-//       }
-//     } else {
-//       res.json({ "message": "Required fields missing", "success": false });
-//     }
-//   } else {
-//     res.json({ "message": "JWT does not match", "success": false });
-//   }
-// })
+app.delete('/zcom/blog', async (req, res) => {
+  await executeLatinFunction()
+  var jwt = req.header('jwt')
+  var id = req.query.id
+  if (jwt == SAdminJwt) {
+    if (Number(id)) {
+      const result = await prisma.zcom_blog.delete({
+        where: { id: Number(id) }
+      });
+      if (result) {
+        res.json({ "message": "Blog successfully Removed.", "success": true });
+      } else {
+        res.json({ "message": "No blog found.", "success": false });
+      }
+    } else {
+      res.json({ "message": "Required fields missing", "success": false });
+    }
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
 
 app.post('/zcom/fileUpload', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   upload(req, res, (err) => {
     if (err) {
       res.json({ "error": false, "message": err.message });
@@ -1549,7 +1678,7 @@ app.post('/zcom/fileUpload', async (req, res) => {
 })
 
 app.get('/zcom/get_Images', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   fs.readdir("./images", function (err, files) {
     if (err) {
       res.json();
@@ -1563,7 +1692,7 @@ app.get('/zcom/get_Images', async (req, res) => {
 })
 
 app.delete('/zcom/fileDelete', async (req, res) => {
-  // await executeLatinFunction()
+  await executeLatinFunction()
   var name = req.query.name
   if (name) {
     fs.unlink('./images/' + name, (err) => {
@@ -1636,7 +1765,7 @@ app.get('/zcom/images/*', async (req, res) => {
   const search = "%20";
   const replacer = new RegExp(search, "g");
   // res.sendFile('C:/Users/intel/Desktop/zcom_node_server/' + req.path.replace("small/", "").replace("/zcom/", "").replace(replacer, " "))
-  res.sendFile("/home/arthy" + req.path.replace("small/", "").replace(replacer, " "));
+  res.sendFile("/home/arth" + req.path.replace("small/", "").replace(replacer, " "));
 })
 
 app.use((req: any, res: any) => {
