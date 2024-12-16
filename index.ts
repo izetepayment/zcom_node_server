@@ -1762,8 +1762,8 @@ app.use(express.static(__dirname + '/zcom/images'));
 app.get('/zcom/images/*', async (req, res) => {
   const search = "%20";
   const replacer = new RegExp(search, "g");
-  // res.sendFile('C:/Users/intel/Desktop/zcom_node_server/' + req.path.replace("small/", "").replace("/zcom/", "").replace(replacer, " "))
-  res.sendFile("/home/arth" + req.path.replace("small/", "").replace(replacer, " "));
+  res.sendFile('C:/Users/intel/Desktop/zcom_node_server/' + req.path.replace("small/", "").replace("/zcom/", "").replace(replacer, " "))
+  // res.sendFile("/home/arth" + req.path.replace("small/", "").replace(replacer, " "));
 })
 
 app.use((req: any, res: any) => {
