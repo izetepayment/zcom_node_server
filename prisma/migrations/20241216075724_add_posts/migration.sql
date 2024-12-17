@@ -172,6 +172,7 @@ ALTER TABLE `zcom_user` MODIFY `name` VARCHAR(191) NOT NULL,
 -- AlterTable
 ALTER TABLE `zcom_vendor` MODIFY `vendorName` VARCHAR(191) NOT NULL,
     MODIFY `phone` VARCHAR(191) NOT NULL,
+    MODIFY `password` VARCHAR(191) NOT NULL,
     MODIFY `email` VARCHAR(191) NOT NULL,
     MODIFY `shopName` VARCHAR(191) NOT NULL,
     MODIFY `shopImg` VARCHAR(191) NOT NULL,

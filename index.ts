@@ -8,13 +8,13 @@ import moment from 'moment-timezone'
 
 const axios = require("axios");
 
-var path = require('path');
+let path = require('path');
 const prisma = new PrismaClient()
 const app = express()
 app.use(express.json())
 app.use(cors())
 app.use(express.urlencoded({ extended: true, }))
-var router = express.Router();
+let router = express.Router();
 //options for cors midddleware
 const options = {
   allowedHeaders: [
@@ -44,15 +44,16 @@ app.get('/test', (req, res) => {
 const SAdminJwt = "Bearer 5e4aba774effe088d9cd99c434c0f240"
 
 app.post('/zcom/admin_register', async (req, res) => {
-  await executeLatinFunction()
-  var jwt = req.header("jwt")
-  var name = req.body.name
-  var phone = req.body.phone
-  var email = req.body.email
-  var password = req.body.password
-  var address = req.body.address
-  console.log(jwt)
+  // await executeLatinFunction()
   console.log(req.body)
+  let jwt = req.header("jwt")
+  let name = req.body.name
+  let phone = req.body.phone
+  let email = req.body.email
+  let password = req.body.password
+  let address = req.body.address
+  console.log(jwt)
+  
   if (jwt == SAdminJwt) {
     if (name && phone && email && password && address) {
       const resultUser = await prisma.zcom_admin.findFirst({
@@ -85,13 +86,13 @@ app.post('/zcom/admin_register', async (req, res) => {
 
 app.put('/zcom/admin', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header("jwt")
-  var aId = req.body.aId
-  var name = req.body.name
-  var email = req.body.email
-  var password = req.body.password
-  var address = req.body.address
-  var id = req.body.id
+  let jwt = req.header("jwt")
+  let aId = req.body.aId
+  let name = req.body.name
+  let email = req.body.email
+  let password = req.body.password
+  let address = req.body.address
+  let id = req.body.id
   console.log(req.body)
   if (jwt == SAdminJwt) {
     if (Number(id)) {
@@ -114,10 +115,10 @@ app.put('/zcom/admin', async (req, res) => {
 
 app.post('/zcom/login', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header("jwt");
-  var phone = req.body.mobile
-  var password = req.body.password
-  var role = req.body.role
+  let jwt = req.header("jwt");
+  let phone = req.body.mobile
+  let password = req.body.password
+  let role = req.body.role
   console.log(jwt)
   console.log(req.body)
   if (jwt == SAdminJwt) {
@@ -157,31 +158,51 @@ app.post('/zcom/login', async (req, res) => {
           res.json({ "message": "Admin not found.", "success": false });
         }
       } else if (role == "Vendor") {
-        var data = {
-          "user_mobile": phone + "",
-          "user_mpin": password + "",
-          "ip_address": "0.0.0.0",
-          "mac_address": "00:00:00:00",
-          "latitude": "0.0",
-          "longitude": "0.0"
-        };
-        axios.post("https://atmzpe.com/agents_mobile/outlet/agent_login/validate", data, {
-          headers: {
-            "Content-Type": "application/json",
-            "AGENT-MApp-EncryptID": "ad8w4796zeptb45b64145ertlmob3a2chn5",
-            "AGENT-MApp-Encrypt-Passcode": "wzr4529rtl15u52wr200a426zet10147857mob45236wwin"
-          },
-        }).then((response: any) => {
-          // console.log(response.data)
-          if (response.data && response.data.user_details) {
-            res.json({ "id": response.data.user_details.user_id, name: response.data.user_details.user_name, "authKey": "NA", "role": "Vendor", "message": "Welcome to zcom.", "success": true });
-          } else {
-            res.json({ "message": response.data.status_desc, "success": false });
-          }
-        }).catch((err: any) => {
-          console.log("failed to add device", err);
-          // res.json({ "message": "Oops an error occured." + err, "success": false });
+
+        const result = await prisma.zcom_vendor.findFirst({
+          where: { phone: phone }
         });
+      
+        if (result) {
+          const resultPassword = await prisma.zcom_vendor.findFirst({
+            where: { AND: [{ phone: phone }, { password: password }] }
+          });
+          if (resultPassword) {
+            res.json({ "id": resultPassword.id, name: resultPassword.vendorName, "role": "Vendor", "message": "Welcome to zcom.", "success": true });
+          } else {
+            res.json({ "message": "Unauthorized credential vendor", "success": false });
+          }
+        } else {
+          res.json({ "message": "vendor not found.", "success": false });
+        }
+
+        // ********************* seperate DB login******************************
+        // let data = {
+        //   "user_mobile": phone + "",
+        //   "user_mpin": password + "",
+        //   "ip_address": "0.0.0.0",
+        //   "mac_address": "00:00:00:00",
+        //   "latitude": "0.0",
+        //   "longitude": "0.0"
+        // };
+        // axios.post("https://atmzpe.com/agents_mobile/outlet/agent_login/validate", data, {
+        //   headers: {
+        //     "Content-Type": "application/json",
+        //     "AGENT-MApp-EncryptID": "ad8w4796zeptb45b64145ertlmob3a2chn5",
+        //     "AGENT-MApp-Encrypt-Passcode": "wzr4529rtl15u52wr200a426zet10147857mob45236wwin"
+        //   },
+        // }).then((response: any) => {
+        //   // console.log(response.data)
+        //   if (response.data && response.data.user_details) {
+        //     res.json({ "id": response.data.user_details.user_id, name: response.data.user_details.user_name, "authKey": "NA", "role": "Vendor", "message": "Welcome to zcom.", "success": true });
+        //   } else {
+        //     res.json({ "message": response.data.status_desc, "success": false });
+        //   }
+        // }).catch((err: any) => {
+        //   console.log("failed to add device", err);
+        //  // // res.json({ "message": "Oops an error occured." + err, "success": false });
+        // });
+    //  ****************************************************
       } else {
         const result = await prisma.zcom_staff.findFirst({
           where: { phone: phone }
@@ -210,9 +231,9 @@ app.post('/zcom/login', async (req, res) => {
 
 app.get('/zcom/admin', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header("jwt");
-  var id = req.query.id
-  var phone = req.query.phone
+  let jwt = req.header("jwt");
+  let id = req.query.id
+  let phone = req.query.phone
   // console.log(req.query)
   if (jwt == SAdminJwt) {
     const result = await prisma.zcom_admin.findMany({
@@ -231,8 +252,8 @@ app.get('/zcom/admin', async (req, res) => {
 
 app.delete('/zcom/admin', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   console.log(jwt)
   console.log(req.query)
   if (jwt == SAdminJwt) {
@@ -255,12 +276,12 @@ app.delete('/zcom/admin', async (req, res) => {
 
 app.post('/zcom/user_register', async (req, res) => {
   await executeLatinFunction()
-  var name = req.body.name
-  var cc = req.body.cc
-  var phone = req.body.phone
-  var email = req.body.email
-  var password = req.body.password
-  var otp = Math.floor(1000 + Math.random() * 9000);
+  let name = req.body.name
+  let cc = req.body.cc
+  let phone = req.body.phone
+  let email = req.body.email
+  let password = req.body.password
+  let otp = Math.floor(1000 + Math.random() * 9000);
   console.log(req.body)
   if (name && cc && phone && email && password) {
     const resultUser = await prisma.zcom_user.findFirst({
@@ -293,8 +314,8 @@ app.post('/zcom/user_register', async (req, res) => {
 
 app.post('/zcom/user_verify_otp', async (req, res) => {
   await executeLatinFunction()
-  var phone = req.body.phone
-  var otp = req.body.otp
+  let phone = req.body.phone
+  let otp = req.body.otp
   console.log(req.body)
   if (phone && otp) {
     const resultUser = await prisma.zcom_user.findFirst({
@@ -323,8 +344,8 @@ app.post('/zcom/user_verify_otp', async (req, res) => {
 
 // app.post('/zcom/user_login', async (req, res) => {
 // await executeLatinFunction()
-//   var phone = req.body.phone
-//   var password = req.body.password
+//   let phone = req.body.phone
+//   let password = req.body.password
 //   console.log(req.body)
 //   if (phone && password) {
 //     const result = await prisma.zcom_user.findFirst({
@@ -342,8 +363,8 @@ app.post('/zcom/user_verify_otp', async (req, res) => {
 
 app.post('/zcom/user_login', async (req, res) => {
   await executeLatinFunction()
-  var phone = req.body.phone
-  var password = req.body.password
+  let phone = req.body.phone
+  let password = req.body.password
   console.log(req.body)
   if (phone && password) {
     const result = await prisma.zcom_user.findFirst({
@@ -375,8 +396,8 @@ app.post('/zcom/user_login', async (req, res) => {
 
 app.get('/zcom/user', async (req, res) => {
   await executeLatinFunction()
-  var id = req.query.id
-  var phone = req.query.phone
+  let id = req.query.id
+  let phone = req.query.phone
   console.log(req.query)
   const result = await prisma.zcom_user.findMany({
     where: { AND: [id ? { id: Number(id) } : {}, phone ? { phone: phone + "" } : {}] },
@@ -391,7 +412,7 @@ app.get('/zcom/user', async (req, res) => {
 
 app.delete('/zcom/user', async (req, res) => {
   await executeLatinFunction()
-  var id = req.query.id
+  let id = req.query.id
   if (Number(id)) {
     const result = await prisma.zcom_user.delete({
       where: { id: Number(id) }
@@ -408,9 +429,9 @@ app.delete('/zcom/user', async (req, res) => {
 
 app.post('/zcom/categories', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var category = req.body.category
-  var image = req.body.image
+  let jwt = req.header('jwt')
+  let category = req.body.category
+  let image = req.body.image
   console.log(req.body)
   if (jwt == SAdminJwt) {
     if (category && image) {
@@ -439,10 +460,10 @@ app.post('/zcom/categories', async (req, res) => {
 
 app.put('/zcom/categories', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var category = req.body.category
-  var image = req.body.image
-  var id = req.body.id
+  let jwt = req.header('jwt')
+  let category = req.body.category
+  let image = req.body.image
+  let id = req.body.id
   if (jwt == SAdminJwt) {
     console.log(req.body)
     if (Number(id)) {
@@ -465,8 +486,8 @@ app.put('/zcom/categories', async (req, res) => {
 
 app.get('/zcom/categories', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   // if (jwt == SAdminJwt) {
   const result = await prisma.zcom_categories.findMany({
     where: id ? { id: Number(id) } : {},
@@ -480,8 +501,8 @@ app.get('/zcom/categories', async (req, res) => {
 
 app.delete('/zcom/categories', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   if (jwt == SAdminJwt) {
     if (Number(id)) {
       const result = await prisma.zcom_categories.delete({
@@ -502,10 +523,10 @@ app.delete('/zcom/categories', async (req, res) => {
 
 app.post('/zcom/subcategories', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var categoryId = req.body.categoryId
-  var subCategory = req.body.subCategory
-  var image = req.body.image
+  let jwt = req.header('jwt')
+  let categoryId = req.body.categoryId
+  let subCategory = req.body.subCategory
+  let image = req.body.image
   console.log(req.body)
   if (jwt == SAdminJwt) {
     if (categoryId && subCategory && image) {
@@ -527,11 +548,11 @@ app.post('/zcom/subcategories', async (req, res) => {
 
 app.put('/zcom/subcategories', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var categoryId = req.body.categoryId
-  var subCategory = req.body.subCategory
-  var image = req.body.image
-  var id = req.body.id
+  let jwt = req.header('jwt')
+  let categoryId = req.body.categoryId
+  let subCategory = req.body.subCategory
+  let image = req.body.image
+  let id = req.body.id
   if (jwt == SAdminJwt) {
     console.log(req.body)
     if (Number(id)) {
@@ -554,8 +575,8 @@ app.put('/zcom/subcategories', async (req, res) => {
 
 app.get('/zcom/subcategories', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   console.log(jwt)
   console.log("cat")
   // if (jwt == SAdminJwt) {
@@ -571,8 +592,8 @@ app.get('/zcom/subcategories', async (req, res) => {
 
 app.get('/zcom/trending_subcat', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   console.log(jwt)
   console.log("cat")
   // if (jwt == SAdminJwt) {
@@ -588,8 +609,8 @@ app.get('/zcom/trending_subcat', async (req, res) => {
 
 app.delete('/zcom/subcategories', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   if (jwt == SAdminJwt) {
     if (Number(id)) {
       const result = await prisma.zcom_subcategories.delete({
@@ -610,24 +631,24 @@ app.delete('/zcom/subcategories', async (req, res) => {
 
 app.post('/zcom/stock', async (req, res) => {
   await executeLatinFunction()
-  var vendorId = req.body.vendorId
-  var categoryId = req.body.categoryId
-  var subcategoryId = req.body.subcategoryId
-  var sku = req.body.sku
-  var productName = req.body.productName
-  var image = req.body.image
-  var price = req.body.price
-  var strikePrice = req.body.strikePrice
-  var qty = req.body.qty
-  var discount = req.body.discount
-  var coupon = req.body.coupon
-  var shipPrice = req.body.shipPrice
-  var stockUpdate = req.body.stockUpdate
-  var spec = req.body.spec
-  var highlights = req.body.highlights
-  var description = req.body.description
+  let vendorId = req.body.vendorId
+  let categoryId = req.body.categoryId
+  let subcategoryId = req.body.subcategoryId
+  let sku = req.body.sku
+  let productName = req.body.productName
+  let image = req.body.image
+  let price = req.body.price
+  let strikePrice = req.body.strikePrice
+  let qty = req.body.qty
+  let discount = req.body.discount
+  let coupon = req.body.coupon
+  let shipPrice = req.body.shipPrice
+  let stockUpdate = req.body.stockUpdate
+  let spec = req.body.spec
+  let highlights = req.body.highlights
+  let description = req.body.description
   console.log(req.body)
-  var jwt = req.header('jwt')
+  let jwt = req.header('jwt')
   if (jwt == SAdminJwt) {
     if (vendorId && categoryId && subcategoryId && sku && productName && image && price && strikePrice && qty && discount && coupon &&
       shipPrice && stockUpdate && spec) {
@@ -653,25 +674,25 @@ app.post('/zcom/stock', async (req, res) => {
 
 app.put('/zcom/stock', async (req, res) => {
   await executeLatinFunction()
-  var vendorId = req.body.vendorId
-  var categoryId = req.body.categoryId
-  var subcategoryId = req.body.subcategoryId
-  var sku = req.body.sku
-  var productName = req.body.productName
-  var image = req.body.image
-  var price = req.body.price
-  var strikePrice = req.body.strikePrice
-  var qty = req.body.qty
-  var discount = req.body.discount
-  var coupon = req.body.coupon
-  var shipPrice = req.body.shipPrice
-  var stockUpdate = req.body.stockUpdate
-  var spec = req.body.spec
-  var highlights = req.body.highlights
-  var description = req.body.description
-  var id = req.body.id
+  let vendorId = req.body.vendorId
+  let categoryId = req.body.categoryId
+  let subcategoryId = req.body.subcategoryId
+  let sku = req.body.sku
+  let productName = req.body.productName
+  let image = req.body.image
+  let price = req.body.price
+  let strikePrice = req.body.strikePrice
+  let qty = req.body.qty
+  let discount = req.body.discount
+  let coupon = req.body.coupon
+  let shipPrice = req.body.shipPrice
+  let stockUpdate = req.body.stockUpdate
+  let spec = req.body.spec
+  let highlights = req.body.highlights
+  let description = req.body.description
+  let id = req.body.id
   console.log(req.body)
-  var jwt = req.header('jwt')
+  let jwt = req.header('jwt')
   if (jwt == SAdminJwt) {
     if (Number(id)) {
       const result = await prisma.zcom_stock.update({
@@ -698,26 +719,26 @@ app.put('/zcom/stock', async (req, res) => {
 app.get('/zcom/stock', async (req, res) => {
   // await executeLatinFunction()
   await executeUtfFunction()
-  var vendorDet = new Map();
-  var categoryDet = new Map();
-  var subcatDet = new Map();
-  (await prisma.zcom_admin.findMany()).forEach((element) => {
+  let vendorDet = new Map();
+  let categoryDet = new Map();
+  let subcatDet = new Map();
+  (await prisma.zcom_admin.findMany()).forEach((element:any) => {
     vendorDet.set(element.id + "", element.name)
   });
-  (await prisma.zcom_categories.findMany()).forEach((element) => {
+  (await prisma.zcom_categories.findMany()).forEach((element:any) => {
     categoryDet.set(element.id + "", element.category)
   });
-  (await prisma.zcom_subcategories.findMany()).forEach((element) => {
+  (await prisma.zcom_subcategories.findMany()).forEach((element:any) => {
     subcatDet.set(element.id + "", element.subCategory)
   });
-  var jwt = req.header('jwt')
-  var id = req.query.id
-  var searchKey = req.query.searchKey
+  let jwt = req.header('jwt')
+  let id = req.query.id
+  let searchKey = req.query.searchKey
   // if (jwt == SAdminJwt) {
   const result = (await prisma.zcom_stock.findMany({
     where: id ? { id: Number(id) } : searchKey ? { productName: { contains: searchKey + "" } } : {},
     orderBy: { id: "desc" }
-  })).map(async function (val, index) {
+  })).map(async function (val:any, index:any) {
     const totalreview = await prisma.zcom_rating.findMany({
       where: { stockId: id + "" }
     })
@@ -741,13 +762,13 @@ app.get('/zcom/stock', async (req, res) => {
 app.get('/zcom/single_product', async (req, res) => {
   // await executeLatinFunction()
   await executeUtfFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   // if (jwt == SAdminJwt) {
   const result = (await prisma.zcom_stock.findMany({
     where: { id: Number(id) },
     orderBy: { id: "desc" }
-  })).map(async function (val, index) {
+  })).map(async function (val:any, index:any) {
     const totalreview = await prisma.zcom_rating.count({
       where: { stockId: id + "" }
     })
@@ -767,8 +788,8 @@ app.get('/zcom/single_product', async (req, res) => {
 
 app.post('/zcom/fetchProductByIds', async (req, res) => {
   await executeUtfFunction()
-  // var jwt = req.header('jwt')
-  var id = req.body.id
+  // let jwt = req.header('jwt')
+  let id = req.body.id
   const result = await prisma.zcom_stock.findMany({
     where: { id: { in: id } }
   });
@@ -781,13 +802,13 @@ app.post('/zcom/fetchProductByIds', async (req, res) => {
 app.get('/zcom/feature_product', async (req, res) => {
   // await executeLatinFunction()
   await executeUtfFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   // if (jwt == SAdminJwt) {
   const result = await Promise.all((await prisma.zcom_stock.findMany({
     select: { id: true, productName: true, image: true, price: true, strikePrice: true, rating: true, discount: true, },
     orderBy: { id: "asc" }
-  })).map(async function (val, index) {
+  })).map(async function (val:any, index:any) {
     const totalreview = await prisma.zcom_rating.count({
       where: { stockId: id + "" }
     })
@@ -805,15 +826,15 @@ app.get('/zcom/feature_product', async (req, res) => {
 app.get('/zcom/limited_product', async (req, res) => {
   // await executeLatinFunction()
   await executeUtfFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
-  var subcategoryId = req.query.subcategoryId
+  let jwt = req.header('jwt')
+  let id = req.query.id
+  let subcategoryId = req.query.subcategoryId
   // if (jwt == SAdminJwt) {
   const result = await Promise.all((await prisma.zcom_stock.findMany({
     where: { subcategoryId: subcategoryId + "" },
     select: { id: true, productName: true, image: true, price: true, strikePrice: true, rating: true, discount: true, },
     orderBy: { id: "asc" }
-  })).map(async function (val, index) {
+  })).map(async function (val:any, index:any) {
     const totalreview = await prisma.zcom_rating.count({
       where: { stockId: id + "" }
     })
@@ -830,8 +851,8 @@ app.get('/zcom/limited_product', async (req, res) => {
 
 app.delete('/zcom/stock', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   if (jwt == SAdminJwt) {
     if (Number(id)) {
       const result = await prisma.zcom_stock.delete({
@@ -852,12 +873,12 @@ app.delete('/zcom/stock', async (req, res) => {
 
 app.post('/zcom/cart', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var userId = req.body.userId
-  var userName = req.body.userName
-  var phone = req.body.phone
-  var email = req.body.email
-  var stockId = req.body.stockId
+  let jwt = req.header('jwt')
+  let userId = req.body.userId
+  let userName = req.body.userName
+  let phone = req.body.phone
+  let email = req.body.email
+  let stockId = req.body.stockId
   if (jwt == SAdminJwt) {
     if (userId && userName && phone && email && stockId) {
       const resultfind = await prisma.zcom_cart.findFirst({ where: { userId: userId } });
@@ -891,18 +912,18 @@ app.post('/zcom/cart', async (req, res) => {
 
 app.post('/zcom/cart_app', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var userId = req.body.userId
-  var userName = req.body.userName
-  var phone = req.body.phone
-  var email = req.body.email
-  var stockId = req.body.stockId
-  var isAdd = req.body.isAdd
+  let jwt = req.header('jwt')
+  let userId = req.body.userId
+  let userName = req.body.userName
+  let phone = req.body.phone
+  let email = req.body.email
+  let stockId = req.body.stockId
+  let isAdd = req.body.isAdd
   if (jwt == SAdminJwt) {
     if (userId && userName && phone && email && stockId) {
       const resultfind = await prisma.zcom_cart.findFirst({ where: { userId: userId } });
       if (resultfind) {
-        var proDet = JSON.parse(resultfind.stockId)
+        let proDet = JSON.parse(resultfind.stockId)
         if (isAdd == 'add') {
           proDet.push(stockId)
         } else if (isAdd == 'delete') {
@@ -944,9 +965,9 @@ app.post('/zcom/cart_app', async (req, res) => {
 
 app.get("/zcom/cart", async (req, res) => {
   await executeLatinFunction();
-  var jwt = req.header('jwt')
+  let jwt = req.header('jwt')
   if (jwt == SAdminJwt) {
-    var userId = req.query.userId
+    let userId = req.query.userId
     const result = await prisma.zcom_cart.findFirst({
       where: { userId: userId + "" }
     });
@@ -962,30 +983,30 @@ app.get("/zcom/cart", async (req, res) => {
 
 app.post('/zcom/order', async (req, res) => {
   await executeLatinFunction()
-  var userId = req.body.userId
-  var vendorId = req.body.vendorId
-  var items = req.body.items
-  var sku = req.body.sku
-  var category = req.body.category
-  var productName = req.body.productName
-  var image = req.body.image
-  var username = req.body.username
-  var phone = req.body.phone
-  var email = req.body.email
-  var addressId = req.body.addressId
-  var payMode = req.body.payMode
-  var payId = req.body.payId
-  var price = req.body.price
-  var coupon = req.body.coupon ?? ""
-  var couponCost = req.body.couponCost ?? ""
-  var discount = req.body.discount ?? ""
-  var shipPrice = req.body.shipPrice ?? ""
-  var deliveryCharge = req.body.deliveryCharge ?? ""
-  var packCharge = req.body.packCharge ?? ""
-  var total = req.body.total
-  var status = req.body.status
+  let userId = req.body.userId
+  let vendorId = req.body.vendorId
+  let items = req.body.items
+  let sku = req.body.sku
+  let category = req.body.category
+  let productName = req.body.productName
+  let image = req.body.image
+  let username = req.body.username
+  let phone = req.body.phone
+  let email = req.body.email
+  let addressId = req.body.addressId
+  let payMode = req.body.payMode
+  let payId = req.body.payId
+  let price = req.body.price
+  let coupon = req.body.coupon ?? ""
+  let couponCost = req.body.couponCost ?? ""
+  let discount = req.body.discount ?? ""
+  let shipPrice = req.body.shipPrice ?? ""
+  let deliveryCharge = req.body.deliveryCharge ?? ""
+  let packCharge = req.body.packCharge ?? ""
+  let total = req.body.total
+  let status = req.body.status
   console.log(req.body)
-  var jwt = req.header('jwt')
+  let jwt = req.header('jwt')
   if (jwt == SAdminJwt) {
     if (userId && vendorId && items && sku && category && productName && image && username && phone && email && addressId && payMode &&
       payId && price && total && status) {
@@ -1012,7 +1033,7 @@ app.post('/zcom/order', async (req, res) => {
 
 app.get('/zcom/order', async (req, res) => {
   await executeLatinFunction()
-  var id = req.query.id
+  let id = req.query.id
   const result = await prisma.zcom_order.findMany({
     where: id ? { id: Number(id) } : {},
     orderBy: { id: "desc" }
@@ -1022,7 +1043,7 @@ app.get('/zcom/order', async (req, res) => {
 
 app.delete('/zcom/order', async (req, res) => {
   await executeLatinFunction()
-  var id = req.query.id
+  let id = req.query.id
   if (Number(id)) {
     const result = await prisma.zcom_order.delete({
       where: { id: Number(id) }
@@ -1039,29 +1060,30 @@ app.delete('/zcom/order', async (req, res) => {
 
 app.post('/zcom/vendor', async (req, res) => {
   await executeLatinFunction()
-  var vendorName = req.body.vendorName
-  var phone = req.body.phone
-  var email = req.body.email
-  var shopName = req.body.shopName
-  var shopImg = req.body.shopImg
-  var address = req.body.address
-  var latlong = req.body.latlong
-  var aadhaarNo = req.body.aadhaarNo
-  var aadhaarImg = req.body.aadhaarImg
-  var panNo = req.body.panNo
-  var panImg = req.body.panImg
-  var gstNo = req.body.gstNo
-  var status = req.body.status
+  let vendorName = req.body.vendorName
+  let phone = req.body.phone
+  let email = req.body.email
+  let shopName = req.body.shopName
+  let shopImg = req.body.shopImg
+  let address = req.body.address
+  let latlong = req.body.latlong
+  let aadhaarNo = req.body.aadhaarNo
+  let aadhaarImg = req.body.aadhaarImg
+  let panNo = req.body.panNo
+  let panImg = req.body.panImg
+  let gstNo = req.body.gstNo
+  let status = req.body.status
+  let password = req.body.password
   console.log(req.body)
-  var jwt = req.header('jwt')
+  let jwt = req.header('jwt')
   if (jwt == SAdminJwt) {
     if (vendorName && phone && email && shopName && shopImg && address && latlong && aadhaarNo && aadhaarImg && panNo && panImg &&
-      gstNo && status) {
+      gstNo && status && password) {
       const findVendor = await prisma.zcom_vendor.findFirst({ where: { phone: phone } });
       if (!findVendor) {
         const result = await prisma.zcom_vendor.create({
           data: {
-            vendorName: vendorName, phone: phone, email: email, shopName: shopName, shopImg: shopImg, address: address,
+            vendorName: vendorName, phone: phone, password: password, email: email, shopName: shopName, shopImg: shopImg, address: address,
             latlong: latlong, aadhaarNo: aadhaarNo, aadhaarImg: aadhaarImg, panNo: panNo, panImg: panImg, gstNo: gstNo, status: status
           }
         });
@@ -1083,22 +1105,22 @@ app.post('/zcom/vendor', async (req, res) => {
 
 app.put('/zcom/vendor', async (req, res) => {
   await executeLatinFunction()
-  var vendorName = req.body.vendorName
-  var phone = req.body.phone
-  var email = req.body.email
-  var shopName = req.body.shopName
-  var shopImg = req.body.shopImg
-  var address = req.body.address
-  var latlong = req.body.latlong
-  var aadhaarNo = req.body.aadhaarNo
-  var aadhaarImg = req.body.aadhaarImg
-  var panNo = req.body.panNo
-  var panImg = req.body.panImg
-  var gstNo = req.body.gstNo
-  var status = req.body.status
-  var id = req.body.id
+  let vendorName = req.body.vendorName
+  let phone = req.body.phone
+  let email = req.body.email
+  let shopName = req.body.shopName
+  let shopImg = req.body.shopImg
+  let address = req.body.address
+  let latlong = req.body.latlong
+  let aadhaarNo = req.body.aadhaarNo
+  let aadhaarImg = req.body.aadhaarImg
+  let panNo = req.body.panNo
+  let panImg = req.body.panImg
+  let gstNo = req.body.gstNo
+  let status = req.body.status
+  let id = req.body.id
   console.log(req.body)
-  var jwt = req.header('jwt')
+  let jwt = req.header('jwt')
   if (jwt == SAdminJwt) {
     if (Number(id)) {
       const result = await prisma.zcom_vendor.update({
@@ -1123,8 +1145,8 @@ app.put('/zcom/vendor', async (req, res) => {
 
 app.get('/zcom/vendor', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   if (jwt == SAdminJwt) {
     const result = await prisma.zcom_vendor.findMany({
       where: id ? { id: Number(id) } : {},
@@ -1138,8 +1160,8 @@ app.get('/zcom/vendor', async (req, res) => {
 
 app.delete('/zcom/vendor', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   if (jwt == SAdminJwt) {
     if (Number(id)) {
       const result = await prisma.zcom_vendor.delete({
@@ -1161,18 +1183,18 @@ app.delete('/zcom/vendor', async (req, res) => {
 
 app.post('/zcom/staff', async (req, res) => {
   await executeLatinFunction()
-  var empId = req.body.empId
-  var role = req.body.role
-  var empName = req.body.empName
-  var phone = req.body.phone
-  var email = req.body.email
-  var address = req.body.address
-  var aadhaarNo = req.body.aadhaarNo
-  var password = req.body.password
-  var joinDate = req.body.joinDate
-  var status = req.body.status
+  let empId = req.body.empId
+  let role = req.body.role
+  let empName = req.body.empName
+  let phone = req.body.phone
+  let email = req.body.email
+  let address = req.body.address
+  let aadhaarNo = req.body.aadhaarNo
+  let password = req.body.password
+  let joinDate = req.body.joinDate
+  let status = req.body.status
   console.log(req.body)
-  var jwt = req.header('jwt')
+  let jwt = req.header('jwt')
   if (jwt == SAdminJwt) {
     if (empId && role && empName && phone && email && address && aadhaarNo && password && joinDate) {
       const findStaff = await prisma.zcom_staff.findFirst({ where: { phone: phone } });
@@ -1202,18 +1224,18 @@ app.post('/zcom/staff', async (req, res) => {
 
 app.put('/zcom/staff', async (req, res) => {
   await executeLatinFunction()
-  var empId = req.body.empId
-  var role = req.body.role
-  var empName = req.body.empName
-  var phone = req.body.phone
-  var email = req.body.email
-  var address = req.body.address
-  var aadhaarNo = req.body.aadhaarNo
-  var joinDate = req.body.joinDate
-  var status = req.body.status
-  var id = req.body.id
+  let empId = req.body.empId
+  let role = req.body.role
+  let empName = req.body.empName
+  let phone = req.body.phone
+  let email = req.body.email
+  let address = req.body.address
+  let aadhaarNo = req.body.aadhaarNo
+  let joinDate = req.body.joinDate
+  let status = req.body.status
+  let id = req.body.id
   console.log(req.body)
-  var jwt = req.header('jwt')
+  let jwt = req.header('jwt')
   if (jwt == SAdminJwt) {
     if (Number(id)) {
       const result = await prisma.zcom_staff.update({
@@ -1238,8 +1260,8 @@ app.put('/zcom/staff', async (req, res) => {
 
 app.get('/zcom/staff', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   if (jwt == SAdminJwt) {
     const result = await prisma.zcom_staff.findMany({
       where: id ? { id: Number(id) } : {},
@@ -1253,8 +1275,8 @@ app.get('/zcom/staff', async (req, res) => {
 
 app.delete('/zcom/staff', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   if (jwt == SAdminJwt) {
     if (Number(id)) {
       const result = await prisma.zcom_staff.delete({
@@ -1275,18 +1297,18 @@ app.delete('/zcom/staff', async (req, res) => {
 
 app.post('/zcom/dPartner', async (req, res) => {
   await executeLatinFunction()
-  var dPartnerId = req.body.dPartnerId
-  var vendorShop = req.body.vendorShop
-  var name = req.body.name
-  var phone = req.body.phone
-  var email = req.body.email
-  var address = req.body.address
-  var aadhaarNo = req.body.aadhaarNo
-  var drivingLicense = req.body.drivingLicense
-  var joinDate = req.body.joinDate
-  var status = req.body.status
+  let dPartnerId = req.body.dPartnerId
+  let vendorShop = req.body.vendorShop
+  let name = req.body.name
+  let phone = req.body.phone
+  let email = req.body.email
+  let address = req.body.address
+  let aadhaarNo = req.body.aadhaarNo
+  let drivingLicense = req.body.drivingLicense
+  let joinDate = req.body.joinDate
+  let status = req.body.status
   console.log(req.body)
-  var jwt = req.header('jwt')
+  let jwt = req.header('jwt')
   if (jwt == SAdminJwt) {
     if (dPartnerId && vendorShop && name && phone && email && address && aadhaarNo && drivingLicense && joinDate) {
       const findStaff = await prisma.zcom_delivery_partner.findFirst({ where: { phone: phone } });
@@ -1315,19 +1337,19 @@ app.post('/zcom/dPartner', async (req, res) => {
 
 app.put('/zcom/dPartner', async (req, res) => {
   await executeLatinFunction()
-  var dPartnerId = req.body.dPartnerId
-  var vendorShop = req.body.vendorShop
-  var name = req.body.name
-  var phone = req.body.phone
-  var email = req.body.email
-  var address = req.body.address
-  var aadhaarNo = req.body.aadhaarNo
-  var drivingLicense = req.body.drivingLicense
-  var joinDate = req.body.joinDate
-  var status = req.body.status
-  var id = req.body.id
+  let dPartnerId = req.body.dPartnerId
+  let vendorShop = req.body.vendorShop
+  let name = req.body.name
+  let phone = req.body.phone
+  let email = req.body.email
+  let address = req.body.address
+  let aadhaarNo = req.body.aadhaarNo
+  let drivingLicense = req.body.drivingLicense
+  let joinDate = req.body.joinDate
+  let status = req.body.status
+  let id = req.body.id
   console.log(req.body)
-  var jwt = req.header('jwt')
+  let jwt = req.header('jwt')
   if (jwt == SAdminJwt) {
     if (Number(id)) {
       const result = await prisma.zcom_delivery_partner.update({
@@ -1352,8 +1374,8 @@ app.put('/zcom/dPartner', async (req, res) => {
 
 app.get('/zcom/dPartner', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   if (jwt == SAdminJwt) {
     const result = await prisma.zcom_delivery_partner.findMany({
       where: id ? { id: Number(id) } : {},
@@ -1367,8 +1389,8 @@ app.get('/zcom/dPartner', async (req, res) => {
 
 app.delete('/zcom/dPartner', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   if (jwt == SAdminJwt) {
     if (Number(id)) {
       const result = await prisma.zcom_delivery_partner.delete({
@@ -1389,16 +1411,16 @@ app.delete('/zcom/dPartner', async (req, res) => {
 
 app.post('/zcom/rating', async (req, res) => {
   await executeLatinFunction()
-  var userId = req.body.userId
-  var username = req.body.username
-  var userImg = req.body.userImg
-  var stockId = req.body.stockId
-  var productImg = req.body.productImg
-  var title = req.body.title
-  var review = req.body.review
-  var rating = req.body.rating
+  let userId = req.body.userId
+  let username = req.body.username
+  let userImg = req.body.userImg
+  let stockId = req.body.stockId
+  let productImg = req.body.productImg
+  let title = req.body.title
+  let review = req.body.review
+  let rating = req.body.rating
   console.log(req.body)
-  var jwt = req.header('jwt')
+  let jwt = req.header('jwt')
   if (jwt == SAdminJwt) {
     if (userId && username && userImg && Number(stockId) && productImg && title && review && Number(rating)) {
       const result = await prisma.zcom_rating.create({
@@ -1430,10 +1452,10 @@ app.post('/zcom/rating', async (req, res) => {
 
 app.put('/zcom/rating', async (req, res) => {
   await executeLatinFunction()
-  var useful = req.body.useful
-  var id = req.body.id
+  let useful = req.body.useful
+  let id = req.body.id
   console.log(req.body)
-  var jwt = req.header('jwt')
+  let jwt = req.header('jwt')
   if (jwt == SAdminJwt) {
     if (id && useful) {
       const result = await prisma.zcom_rating.update({
@@ -1455,8 +1477,8 @@ app.put('/zcom/rating', async (req, res) => {
 
 app.get('/zcom/rating', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   if (jwt == SAdminJwt) {
     const result = await prisma.zcom_rating.findMany({
       where: id ? { id: Number(id) } : {},
@@ -1470,8 +1492,8 @@ app.get('/zcom/rating', async (req, res) => {
 
 app.delete('/zcom/rating', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   if (jwt == SAdminJwt) {
     if (Number(id)) {
       const result = await prisma.zcom_rating.delete({
@@ -1492,9 +1514,9 @@ app.delete('/zcom/rating', async (req, res) => {
 
 app.post('/zcom/banner', async (req, res) => {
   await executeLatinFunction()
-  var title = req.body.title
-  var banner = req.body.banner
-  var jwt = req.header('jwt')
+  let title = req.body.title
+  let banner = req.body.banner
+  let jwt = req.header('jwt')
   console.log(req.body)
   if (jwt == SAdminJwt) {
     if (title && banner) {
@@ -1516,10 +1538,10 @@ app.post('/zcom/banner', async (req, res) => {
 
 app.put('/zcom/banner', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var title = req.body.title
-  var banner = req.body.banner
-  var id = req.body.id
+  let jwt = req.header('jwt')
+  let title = req.body.title
+  let banner = req.body.banner
+  let id = req.body.id
   console.log(req.body)
   if (jwt == SAdminJwt) {
     if (Number(id)) {
@@ -1542,8 +1564,8 @@ app.put('/zcom/banner', async (req, res) => {
 
 app.get('/zcom/banner', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   // if (jwt == SAdminJwt) {
   const result = await prisma.zcom_banner.findMany({
     where: id ? { id: Number(id) } : {},
@@ -1557,8 +1579,8 @@ app.get('/zcom/banner', async (req, res) => {
 
 app.delete('/zcom/banner', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   if (jwt == SAdminJwt) {
     if (Number(id)) {
       const result = await prisma.zcom_banner.delete({
@@ -1579,11 +1601,11 @@ app.delete('/zcom/banner', async (req, res) => {
 
 app.post('/zcom/blog', async (req, res) => {
   await executeLatinFunction()
-  var image = req.body.image
-  var title = req.body.title
-  var content = req.body.content
+  let image = req.body.image
+  let title = req.body.title
+  let content = req.body.content
   console.log(req.body)
-  var jwt = req.header('jwt')
+  let jwt = req.header('jwt')
   if (jwt == SAdminJwt) {
     if (image && title && content) {
       const result = await prisma.zcom_blog.create({
@@ -1604,12 +1626,12 @@ app.post('/zcom/blog', async (req, res) => {
 
 app.put('/zcom/blog', async (req, res) => {
   await executeLatinFunction()
-  var image = req.body.image
-  var title = req.body.title
-  var content = req.body.content
-  var id = req.body.id
+  let image = req.body.image
+  let title = req.body.title
+  let content = req.body.content
+  let id = req.body.id
   console.log(req.body)
-  var jwt = req.header('jwt')
+  let jwt = req.header('jwt')
   if (jwt == SAdminJwt) {
     if (Number(id)) {
       const result = await prisma.zcom_blog.update({
@@ -1631,8 +1653,8 @@ app.put('/zcom/blog', async (req, res) => {
 
 app.get('/zcom/blog', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   if (jwt == SAdminJwt) {
     const result = await prisma.zcom_blog.findMany({
       where: id ? { id: Number(id) } : {},
@@ -1646,8 +1668,8 @@ app.get('/zcom/blog', async (req, res) => {
 
 app.delete('/zcom/blog', async (req, res) => {
   await executeLatinFunction()
-  var jwt = req.header('jwt')
-  var id = req.query.id
+  let jwt = req.header('jwt')
+  let id = req.query.id
   if (jwt == SAdminJwt) {
     if (Number(id)) {
       const result = await prisma.zcom_blog.delete({
@@ -1693,7 +1715,7 @@ app.get('/zcom/get_Images', async (req, res) => {
 
 app.delete('/zcom/fileDelete', async (req, res) => {
   await executeLatinFunction()
-  var name = req.query.name
+  let name = req.query.name
   if (name) {
     fs.unlink('./images/' + name, (err) => {
       if (err) {
@@ -1748,7 +1770,7 @@ const upload = multer({
     }
   }),
   fileFilter: function (req, file, callback) {
-    var ext = path.extname(file.originalname);
+    let ext = path.extname(file.originalname);
     if (ext !== '.png' && ext !== '.jpg' && ext !== '.gif' && ext !== '.jpeg') {
       return callback(new Error('Only images are allowed'))
     }
