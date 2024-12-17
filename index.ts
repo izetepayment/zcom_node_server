@@ -26,7 +26,7 @@ const options = {
   ],
   credentials: true,
   methods: 'GET,HEAD,OPTIONS,PUT,PATCH,POST,DELETE',
-  origin:  ['https://main.d30lqrqrrga5m7.amplifyapp.com', 'http://localhost:3000'],
+  origin: ['https://main.d30lqrqrrga5m7.amplifyapp.com', 'http://localhost:3000'],
   preflightContinue: false,
 };
 
@@ -592,13 +592,12 @@ app.get('/zcom/subcategories', async (req, res) => {
 
 app.get('/zcom/trending_subcat', async (req, res) => {
   await executeLatinFunction()
-  let jwt = req.header('jwt')
-  let id = req.query.id
+  var jwt = req.header('jwt')
+  var id = req.query.id
   console.log(jwt)
-  console.log("cat")
+  console.log("trendcat ")
   // if (jwt == SAdminJwt) {
   const result = await prisma.zcom_subcategories.findMany({
-    where: id ? { id: Number(id) } : {},
     orderBy: { id: "asc" }
   });
   res.json({ "data": result, "message": "Sub categories successfully Fetched.", "success": true });
@@ -1653,17 +1652,17 @@ app.put('/zcom/blog', async (req, res) => {
 
 app.get('/zcom/blog', async (req, res) => {
   await executeLatinFunction()
-  let jwt = req.header('jwt')
-  let id = req.query.id
+  var jwt = req.header('jwt')
+  var id = req.query.id
   if (jwt == SAdminJwt) {
     const result = await prisma.zcom_blog.findMany({
       where: id ? { id: Number(id) } : {},
       orderBy: { id: "desc" }
     });
     res.json({ "data": result, "message": "Blog successfully Fetched.", "success": true });
-  } else {
-    res.json({ "message": "JWT does not match", "success": false });
-  }
+  // } else {
+  //   res.json({ "message": "JWT does not match", "success": false });
+  // }
 })
 
 app.delete('/zcom/blog', async (req, res) => {
@@ -1786,8 +1785,8 @@ app.use(express.static(__dirname + '/zcom/images'));
 app.get('/zcom/images/*', async (req, res) => {
   const search = "%20";
   const replacer = new RegExp(search, "g");
-  // res.sendFile('C:/Users/intel/Desktop/zcom_node_server/' + req.path.replace("small/", "").replace("/zcom/", "").replace(replacer, " "))
-  res.sendFile("/home/arth" + req.path.replace("small/", "").replace(replacer, " "));
+  res.sendFile('C:/Users/intel/Desktop/zcom_node_server/' + req.path.replace("small/", "").replace("/zcom/", "").replace(replacer, " "))
+  // res.sendFile("/home/arth" + req.path.replace("small/", "").replace(replacer, " "));
 })
 
 app.use((req: any, res: any) => {
@@ -1812,3 +1811,8 @@ async function executeUtfFunction() {
   await prisma.$executeRaw(Prisma.sql`SET CHARACTER SET utf8`);
   await prisma.$executeRaw(Prisma.sql`SET character_set_connection=utf8`);
 }
+
+process.on('unhandledRejection', (reason, promise) => {
+  var res = reason
+  console.log('Unhandled Rejection at:', res)
+})
