@@ -1660,9 +1660,10 @@ app.get('/zcom/blog', async (req, res) => {
       orderBy: { id: "desc" }
     });
     res.json({ "data": result, "message": "Blog successfully Fetched.", "success": true });
-  // } else {
-  //   res.json({ "message": "JWT does not match", "success": false });
-  // }
+  
+  } else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
 })
 
 app.delete('/zcom/blog', async (req, res) => {
