@@ -44,7 +44,7 @@ app.get('/test', (req, res) => {
 const SAdminJwt = "Bearer 5e4aba774effe088d9cd99c434c0f240"
 
 // Utility function to handle async errors
-const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) => 
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) =>
   (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
@@ -59,7 +59,7 @@ app.post('/zcom/admin_register', async (req, res) => {
   let password = req.body.password
   let address = req.body.address
   console.log(jwt)
-  
+
   if (jwt == SAdminJwt) {
     if (name && phone && email && password && address) {
       const resultUser = await prisma.zcom_admin.findFirst({
@@ -168,7 +168,7 @@ app.post('/zcom/login', async (req, res) => {
         const result = await prisma.zcom_vendor.findFirst({
           where: { phone: phone }
         });
-      
+
         if (result) {
           const resultPassword = await prisma.zcom_vendor.findFirst({
             where: { AND: [{ phone: phone }, { password: password }] }
@@ -208,7 +208,7 @@ app.post('/zcom/login', async (req, res) => {
         //   console.log("failed to add device", err);
         //  // // res.json({ "message": "Oops an error occured." + err, "success": false });
         // });
-    //  ****************************************************
+        //  ****************************************************
       } else {
         const result = await prisma.zcom_staff.findFirst({
           where: { phone: phone }
@@ -725,7 +725,7 @@ app.get('/zcom/stock', async (req, res) => {
   try {
     // Execute external functions
     // await executeUtfFunction();
-    
+
     // Initialize Maps to hold vendor, category, and subcategory details
     let vendorDet = new Map();
     let categoryDet = new Map();
@@ -752,11 +752,11 @@ app.get('/zcom/stock', async (req, res) => {
       where: id
         ? { id: Number(id) }
         : searchKey
-        ? { productName: { contains: searchKey + "" } }
-        : {},
+          ? { productName: { contains: searchKey + "" } }
+          : {},
       orderBy: { id: "desc" },
     });
-console.log(vendorDet)
+    console.log(vendorDet)
     // Map stock data and fetch additional details concurrently
     const result = await Promise.all(
       stockData.map(async (val) => {
@@ -795,7 +795,7 @@ console.log(vendorDet)
       message: "Product successfully fetched.",
       success: true,
     });
-  } catch (error:any) {
+  } catch (error: any) {
     console.error("Error fetching stock data:", error.message);
 
     // Send appropriate error response
@@ -806,6 +806,49 @@ console.log(vendorDet)
     });
   }
 });
+
+app.get('/zcom/stock', async (req, res) => {
+  await executeLatinFunction()
+  var vendorDet = new Map();
+  var categoryDet = new Map();
+  var subcatDet = new Map();
+  (await prisma.zcom_admin.findMany()).forEach((element) => {
+    vendorDet.set(element.id + "", element.name)
+  });
+  (await prisma.zcom_categories.findMany()).forEach((element) => {
+    categoryDet.set(element.id + "", element.category)
+  });
+  (await prisma.zcom_subcategories.findMany()).forEach((element) => {
+    subcatDet.set(element.id + "", element.subCategory)
+  });
+  var jwt = req.header('jwt')
+  var id = req.query.id
+  if (jwt == SAdminJwt) {
+    const result = await prisma.zcom_stock.findMany({
+      where: id ? { id: Number(id) } : {},
+      orderBy: { id: "desc" }
+    })
+    await Promise.all(result.map(async function (val, index) {
+      const totalreview = await prisma.zcom_rating.count({
+        where: { stockId: id + "" }
+      })
+      return {
+        "id": val.id,
+        "vendor": vendorDet.has(val.vendorId) ? vendorDet.get(val.vendorId) : "NA",
+        "category": categoryDet.has(val.categoryId) ? categoryDet.get(val.categoryId) : "NA",
+        "subcategory": subcatDet.has(val.subcategoryId) ? subcatDet.get(val.subcategoryId) : "NA",
+        "sku": val.sku, "productName": val.productName, "image": val.image, "price": val.price,
+        "strikePrice": val.strikePrice, "qty": val.qty, "discount": val.discount, "coupon": val.coupon,
+        "shipPrice": val.shipPrice, "stockUpdate": val.stockUpdate, "spec": val.spec,
+        "description": val.description, "createdOn": val.createdOn, totalReviews: totalreview
+      }
+    }));
+    res.json({ "data": result, "message": "Product successfully Fetched.", "success": true });
+  }
+  else {
+    res.json({ "message": "JWT does not match", "success": false });
+  }
+})
 
 app.delete('/zcom/stock', async (req, res) => {
   await executeLatinFunction()
@@ -902,7 +945,7 @@ app.get('/zcom/getStockById', asyncHandler(async (req, res) => {
       message: "Stock data successfully fetched.",
       success: true,
     });
-  } catch (error:any) {
+  } catch (error: any) {
     res.status(500).json({
       message: "An error occurred while fetching stock data.",
       error: error.message,
@@ -921,7 +964,7 @@ app.get('/zcom/single_product', async (req, res) => {
   const result = (await prisma.zcom_stock.findMany({
     where: { id: Number(id) },
     orderBy: { id: "desc" }
-  })).map(async function (val:any, index:any) {
+  })).map(async function (val: any, index: any) {
     const totalreview = await prisma.zcom_rating.count({
       where: { stockId: id + "" }
     })
@@ -934,6 +977,47 @@ app.get('/zcom/single_product', async (req, res) => {
     }
   });
   res.json({ "data": result, "message": "Product successfully Fetched.", "success": true });
+  // } else {
+  //   res.json({ "message": "JWT does not match", "success": false });
+  // }
+})
+
+app.get('/zcom/deal_product', async (req, res) => {
+  // await executeLatinFunction()
+  await executeUtfFunction()
+  let jwt = req.header('jwt')
+  // if (jwt == SAdminJwt) {
+  const result = await prisma.zcom_stock.findMany({
+    select: { image: true, discount: true },
+    orderBy: { id: "asc" }
+  });
+  res.json({ "data": result, "message": "Product successfully Fetched.", "success": true });
+  // } else {
+  //   res.json({ "message": "JWT does not match", "success": false });
+  // }
+})
+
+app.get('/zcom/subcat_product', async (req, res) => {
+  // await executeLatinFunction()
+  await executeUtfFunction()
+  let jwt = req.header('jwt')
+  // if (jwt == SAdminJwt) {
+  var subcategoryId = req.query.subcategoryId
+  if (Number(subcategoryId)) {
+    const result = await prisma.zcom_stock.findMany({
+      where: { subcategoryId: subcategoryId + "" },
+      select: { id: true, image: true },
+      orderBy: { id: "asc" }
+    });
+    const resultUpdate = result.map(function (val) {
+      return {
+        "category": "", "id": val.id, "image": val.image
+      }
+    });
+    res.json({ "data": resultUpdate, "message": "Product successfully Fetched.", "success": true });
+  } else {
+    res.json({ "message": "Required fields missing", "success": false });
+  }
   // } else {
   //   res.json({ "message": "JWT does not match", "success": false });
   // }
@@ -961,7 +1045,7 @@ app.get('/zcom/feature_product', async (req, res) => {
   const result = await Promise.all((await prisma.zcom_stock.findMany({
     select: { id: true, productName: true, image: true, price: true, strikePrice: true, rating: true, discount: true, },
     orderBy: { id: "asc" }
-  })).map(async function (val:any, index:any) {
+  })).map(async function (val: any, index: any) {
     const totalreview = await prisma.zcom_rating.count({
       where: { stockId: id + "" }
     })
@@ -987,7 +1071,7 @@ app.get('/zcom/limited_product', async (req, res) => {
     where: { subcategoryId: subcategoryId + "" },
     select: { id: true, productName: true, image: true, price: true, strikePrice: true, rating: true, discount: true, },
     orderBy: { id: "asc" }
-  })).map(async function (val:any, index:any) {
+  })).map(async function (val: any, index: any) {
     const totalreview = await prisma.zcom_rating.count({
       where: { stockId: id + "" }
     })
@@ -1794,7 +1878,7 @@ app.get('/zcom/blog', async (req, res) => {
       orderBy: { id: "desc" }
     });
     res.json({ "data": result, "message": "Blog successfully Fetched.", "success": true });
-  
+
   } else {
     res.json({ "message": "JWT does not match", "success": false });
   }
@@ -1946,8 +2030,3 @@ async function executeUtfFunction() {
   await prisma.$executeRaw(Prisma.sql`SET CHARACTER SET utf8`);
   await prisma.$executeRaw(Prisma.sql`SET character_set_connection=utf8`);
 }
-
-process.on('unhandledRejection', (reason, promise) => {
-  var res = reason
-  console.log('Unhandled Rejection at:', res)
-})
