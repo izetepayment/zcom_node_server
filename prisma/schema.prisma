@@ -192,3 +192,10 @@ model zcom_blog {
   content   String
   createdOn DateTime @default(now())
 }
+
+model zcom_searches {
+  id        Int      @id @default(autoincrement())
+  searchKey String
+  count     Int      @default(0)
+  createdOn DateTime @default(now())
+}
