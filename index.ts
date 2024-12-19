@@ -1946,38 +1946,6 @@ app.delete('/zcom/fileDelete', async (req, res) => {
   }
 })
 
-async function pushNotification(title: any, message: any, key: any) {
-  const data = JSON.stringify({
-    "to": '/topics/allDevices',
-    "priority": "high",
-    "data": { "title": title, "message": message }
-  })
-  const options = {
-    hostname: 'fcm.googleapis.com',
-    path: '/fcm/send',
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Content-Length': data.length,
-      'Authorization': key
-    },
-    timeout: 11000,
-  }
-  const req = https.request(options, (res) => {
-    let data = '';
-    console.log('Status Code:', res.statusCode);
-    res.on('data', (chunk) => {
-      data += chunk;
-    });
-    res.on('end', () => {
-      console.log(data)
-    });
-  }).on("error", (err) => {
-  });
-  req.write(data);
-  req.end();
-}
-
 const upload = multer({
   storage: multer.diskStorage({
     destination: function (req, file, cb) {
