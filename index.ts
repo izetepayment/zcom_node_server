@@ -634,6 +634,20 @@ app.delete('/zcom/subcategories', async (req, res) => {
   }
 })
 
+app.get('/zcom/searches', async (req, res) => {
+  await executeLatinFunction()
+  let jwt = req.header('jwt')
+  // if (jwt == SAdminJwt) {
+  const result = await prisma.zcom_searches.findMany({
+    select: { searchKey: true },
+    orderBy: { count: "desc" }
+  });
+  res.json({ "data": result, "message": "Trending Searches successfully Fetched.", "success": true });
+  // } else {
+  //   res.json({ "message": "JWT does not match", "success": false });
+  // }
+})
+
 app.post('/zcom/stock', async (req, res) => {
   await executeLatinFunction()
   let vendorId = req.body.vendorId
@@ -721,94 +735,94 @@ app.put('/zcom/stock', async (req, res) => {
   }
 })
 
+// app.get('/zcom/stock', async (req, res) => {
+//   try {
+//     // Execute external functions
+//     // await executeUtfFunction();
+
+//     // Initialize Maps to hold vendor, category, and subcategory details
+//     let vendorDet = new Map();
+//     let categoryDet = new Map();
+//     let subcatDet = new Map();
+
+//     // Fetch and populate Maps
+//     const [vendors, categories, subcategories] = await Promise.all([
+//       prisma.zcom_vendor.findMany(),
+//       prisma.zcom_categories.findMany(),
+//       prisma.zcom_subcategories.findMany(),
+//     ]);
+
+//     vendors.forEach((element) => vendorDet.set(element.id + "", element.vendorName));
+//     categories.forEach((element) => categoryDet.set(element.id + "", element.category));
+//     subcategories.forEach((element) => subcatDet.set(element.id + "", element.subCategory));
+
+//     // Extract query parameters
+//     let jwt = req.header('jwt');
+//     let id = req.query.id;
+//     let searchKey = req.query.searchKey;
+
+//     // Fetch stock data
+//     const stockData = await prisma.zcom_stock.findMany({
+//       where: id
+//         ? { id: Number(id) }
+//         : searchKey
+//           ? { productName: { contains: searchKey + "" } }
+//           : {},
+//       orderBy: { id: "desc" },
+//     });
+//     console.log(vendorDet)
+//     // Map stock data and fetch additional details concurrently
+//     const result = await Promise.all(
+//       stockData.map(async (val) => {
+//         const totalReview = await prisma.zcom_rating.findMany({
+//           where: { stockId: val.id + "" },
+//         });
+
+//         return {
+//           id: val.id,
+//           vendor: vendorDet.has(val.vendorId) ? vendorDet.get(val.vendorId) : "NA",
+//           category: categoryDet.has(val.categoryId) ? categoryDet.get(val.categoryId) : "NA",
+//           subcategory: subcatDet.has(val.subcategoryId) ? subcatDet.get(val.subcategoryId) : "NA",
+//           sku: val.sku,
+//           productName: val.productName,
+//           image: val.image,
+//           price: val.price,
+//           strikePrice: val.strikePrice,
+//           qty: val.qty,
+//           discount: val.discount,
+//           coupon: val.coupon,
+//           shipPrice: val.shipPrice,
+//           stockUpdate: val.stockUpdate,
+//           spec: val.spec,
+//           highlights: val.highlights,
+//           description: val.description,
+//           rating: val.rating,
+//           createdOn: val.createdOn,
+//           totalReviews: totalReview.length, // Example additional field
+//         };
+//       })
+//     );
+//     console.log(result)
+//     // Send successful response
+//     res.json({
+//       data: result,
+//       message: "Product successfully fetched.",
+//       success: true,
+//     });
+//   } catch (error: any) {
+//     console.error("Error fetching stock data:", error.message);
+
+//     // Send appropriate error response
+//     res.status(500).json({
+//       message: "An error occurred while fetching stock data.",
+//       error: error.message,
+//       success: false,
+//     });
+//   }
+// });
+
 app.get('/zcom/stock', async (req, res) => {
-  try {
-    // Execute external functions
-    // await executeUtfFunction();
-
-    // Initialize Maps to hold vendor, category, and subcategory details
-    let vendorDet = new Map();
-    let categoryDet = new Map();
-    let subcatDet = new Map();
-
-    // Fetch and populate Maps
-    const [vendors, categories, subcategories] = await Promise.all([
-      prisma.zcom_vendor.findMany(),
-      prisma.zcom_categories.findMany(),
-      prisma.zcom_subcategories.findMany(),
-    ]);
-
-    vendors.forEach((element) => vendorDet.set(element.id + "", element.vendorName));
-    categories.forEach((element) => categoryDet.set(element.id + "", element.category));
-    subcategories.forEach((element) => subcatDet.set(element.id + "", element.subCategory));
-
-    // Extract query parameters
-    let jwt = req.header('jwt');
-    let id = req.query.id;
-    let searchKey = req.query.searchKey;
-
-    // Fetch stock data
-    const stockData = await prisma.zcom_stock.findMany({
-      where: id
-        ? { id: Number(id) }
-        : searchKey
-          ? { productName: { contains: searchKey + "" } }
-          : {},
-      orderBy: { id: "desc" },
-    });
-    console.log(vendorDet)
-    // Map stock data and fetch additional details concurrently
-    const result = await Promise.all(
-      stockData.map(async (val) => {
-        const totalReview = await prisma.zcom_rating.findMany({
-          where: { stockId: val.id + "" },
-        });
-
-        return {
-          id: val.id,
-          vendor: vendorDet.has(val.vendorId) ? vendorDet.get(val.vendorId) : "NA",
-          category: categoryDet.has(val.categoryId) ? categoryDet.get(val.categoryId) : "NA",
-          subcategory: subcatDet.has(val.subcategoryId) ? subcatDet.get(val.subcategoryId) : "NA",
-          sku: val.sku,
-          productName: val.productName,
-          image: val.image,
-          price: val.price,
-          strikePrice: val.strikePrice,
-          qty: val.qty,
-          discount: val.discount,
-          coupon: val.coupon,
-          shipPrice: val.shipPrice,
-          stockUpdate: val.stockUpdate,
-          spec: val.spec,
-          highlights: val.highlights,
-          description: val.description,
-          rating: val.rating,
-          createdOn: val.createdOn,
-          totalReviews: totalReview.length, // Example additional field
-        };
-      })
-    );
-    console.log(result)
-    // Send successful response
-    res.json({
-      data: result,
-      message: "Product successfully fetched.",
-      success: true,
-    });
-  } catch (error: any) {
-    console.error("Error fetching stock data:", error.message);
-
-    // Send appropriate error response
-    res.status(500).json({
-      message: "An error occurred while fetching stock data.",
-      error: error.message,
-      success: false,
-    });
-  }
-});
-
-app.get('/zcom/stock', async (req, res) => {
-  await executeLatinFunction()
+  await executeUtfFunction()
   var vendorDet = new Map();
   var categoryDet = new Map();
   var subcatDet = new Map();
@@ -821,33 +835,32 @@ app.get('/zcom/stock', async (req, res) => {
   (await prisma.zcom_subcategories.findMany()).forEach((element) => {
     subcatDet.set(element.id + "", element.subCategory)
   });
-  var jwt = req.header('jwt')
+  // var jwt = req.header('jwt')
   var id = req.query.id
-  if (jwt == SAdminJwt) {
-    const result = await prisma.zcom_stock.findMany({
-      where: id ? { id: Number(id) } : {},
-      orderBy: { id: "desc" }
+  // if (jwt == SAdminJwt) {
+  const result = await prisma.zcom_stock.findMany({
+    where: id ? { id: Number(id) } : {},
+    orderBy: { id: "desc" }
+  })
+  const resultUpdate = await Promise.all(result.map(async function (val, index) {
+    const totalreview = await prisma.zcom_rating.count({
+      where: { stockId: id + "" }
     })
-    await Promise.all(result.map(async function (val, index) {
-      const totalreview = await prisma.zcom_rating.count({
-        where: { stockId: id + "" }
-      })
-      return {
-        "id": val.id,
-        "vendor": vendorDet.has(val.vendorId) ? vendorDet.get(val.vendorId) : "NA",
-        "category": categoryDet.has(val.categoryId) ? categoryDet.get(val.categoryId) : "NA",
-        "subcategory": subcatDet.has(val.subcategoryId) ? subcatDet.get(val.subcategoryId) : "NA",
-        "sku": val.sku, "productName": val.productName, "image": val.image, "price": val.price,
-        "strikePrice": val.strikePrice, "qty": val.qty, "discount": val.discount, "coupon": val.coupon,
-        "shipPrice": val.shipPrice, "stockUpdate": val.stockUpdate, "spec": val.spec,
-        "description": val.description, "createdOn": val.createdOn, totalReviews: totalreview
-      }
-    }));
-    res.json({ "data": result, "message": "Product successfully Fetched.", "success": true });
-  }
-  else {
-    res.json({ "message": "JWT does not match", "success": false });
-  }
+    return {
+      "id": val.id,
+      "vendor": vendorDet.has(val.vendorId) ? vendorDet.get(val.vendorId) : "NA",
+      "category": categoryDet.has(val.categoryId) ? categoryDet.get(val.categoryId) : "NA",
+      "subcategory": subcatDet.has(val.subcategoryId) ? subcatDet.get(val.subcategoryId) : "NA",
+      "sku": val.sku, "productName": val.productName, "image": val.image, "price": val.price,
+      "strikePrice": val.strikePrice, "qty": val.qty, "discount": val.discount, "coupon": val.coupon,
+      "shipPrice": val.shipPrice, "stockUpdate": val.stockUpdate, "spec": val.spec,
+      "description": val.description, "createdOn": val.createdOn, totalReviews: totalreview
+    }
+  }));
+  res.json({ "data": resultUpdate, "message": "Product successfully Fetched.", "success": true });
+  // } else {
+  //   res.json({ "message": "JWT does not match", "success": false });
+  // }
 })
 
 app.delete('/zcom/stock', async (req, res) => {
@@ -997,23 +1010,29 @@ app.get('/zcom/deal_product', async (req, res) => {
   // }
 })
 
-app.get('/zcom/subcat_product', async (req, res) => {
+app.post('/zcom/subcat_product', async (req, res) => {
   // await executeLatinFunction()
   await executeUtfFunction()
   let jwt = req.header('jwt')
+  var subcategoryId = req.body.subcategoryId
   // if (jwt == SAdminJwt) {
-  var subcategoryId = req.query.subcategoryId
-  if (Number(subcategoryId)) {
-    const result = await prisma.zcom_stock.findMany({
-      where: { subcategoryId: subcategoryId + "" },
-      select: { id: true, image: true },
+  if (subcategoryId) {
+    const result = await prisma.zcom_subcategories.findMany({
+      where: { id: { in: [10, 16, 8, 17, 3, 18] } },
+      select: { id: true, subCategory: true },
       orderBy: { id: "asc" }
     });
-    const resultUpdate = result.map(function (val) {
+    const resultUpdate = await Promise.all(result.map(async function (val) {
+      const stocks = await prisma.zcom_stock.findMany({
+        where: { subcategoryId: val.id + "" },
+        select: { id: true, image: true },
+        orderBy: { id: "asc" }
+      });
       return {
-        "category": "", "id": val.id, "image": val.image
+        "category": val.subCategory,
+        "stocks": stocks ? stocks : "NA"
       }
-    });
+    }));
     res.json({ "data": resultUpdate, "message": "Product successfully Fetched.", "success": true });
   } else {
     res.json({ "message": "Required fields missing", "success": false });
